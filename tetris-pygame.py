@@ -9,15 +9,18 @@ class Grille:
 
 
 class Piece:
-    def __init__(self, liste_blocks):
-        self.liste_blocks = liste_blocks
-        self.pos = [5, 1]
+    def __init__(self):
+        piece_choisi = random.choice(PIECES)
+        self.couleur = piece_choisi[0]
+        self.centre = piece_choisi[1]
+        self.liste_blocks = piece_choisi[2:]
+        print(PIECES[0])
 
     def verif_pos(self):
         ### Vérifie et modifie les coordonés ###
         verif = True
         for block in self.liste_blocks:
-            if grille.matrice[block[0]][block[1] + 1] in OBSTACLES and grille.matrice[block[0]][block[1] + 1] in self.liste_blocks:
+            if grille.matrice[block[0]][block[1] + 1][0] == "block" and [block[0], block[1] + 1] not in self.liste_blocks:
                 verif = False
                 break
         return verif
@@ -26,14 +29,18 @@ class Piece:
         ### Efface ###
         for block in self.liste_blocks:
             grille.matrice[block[0]][block[1]] = ESPACE
+            print("EFFACE")
 
         ### Actualise les valeurs ###
-        for block in range(len(liste_blocks)):
-            liste_blocks[block][1] += 1
+        for block in range(len(self.liste_blocks)):
+            self.liste_blocks[block][1] += 1
+            print("ACTUALISE VALEURS")
 
         ### Actualise la grille ###
         for block in self.liste_blocks:
-            grille.matrice[block[0]][block[1]] = BLOCK
+            print("ACTUALISE GRILLE")
+            grille.matrice[block[0]][block[1]] = ["block", self.couleur]
+
 
 
     # def verif_point_mange(self):
@@ -68,31 +75,54 @@ def dessine():
 
 
 class Var:
-    FPS = 5
+    FPS = 20
     GAME_OVER = False
     PAUSED = False
     SCORE = 0
 
-GRILLE_LONG = 20 # blocks
-GRILLE_LARG = 30 # blocks
+GRILLE_LONG = 12 # blocks
+GRILLE_LARG = 24 # blocks
 BLOCK_DIM = 20 # px
 FENETRE_LONG = GRILLE_LONG * BLOCK_DIM
 FENETRE_LARG = GRILLE_LARG * BLOCK_DIM
 
-ORANGE = (255, 128, 0)
 VERT = (0, 204, 0)
+NOIR = (0, 0, 0)
 BLANC = (255, 255, 255)
-ROUGE = (255, 0, 0)
 BG = (100, 100, 100)
 
-ESPACE = ["espace", BG]
-MUR = ["mur", ORANGE]
-TETE = ["tete", BLANC]
-CORP = ["corp", VERT]
-POINT = ["point", ROUGE]
-BLOCK = ["block", VERT]
+CYAN = (0, 255, 255)
+BLEU = (0, 0, 255)
+ORANGE = (255, 128, 0)
+JAUNE = (255, 255, 0)
+LIME = (0,255,0)
+MAUVE = (128, 0, 128)
+ROUGE = (255, 0, 0)
 
-OBSTACLES = [MUR, TETE, CORP, BLOCK]
+ESPACE = ["espace", BG]
+MUR = ["block", ORANGE]
+
+BLOCK_CYAN = ["block", CYAN]
+BLOCK_BLEU = ["block", BLEU ]
+BLOCK_ORANGE = ["block", ORANGE]
+BLOCK_JAUNE = ["block", JAUNE]
+BLOCK_LIME = ["block", LIME]
+BLOCK_MAUVE = ["block", MAUVE]
+BLOCK_ROUGE = ["block", ROUGE]
+
+BLOCKS = [BLOCK_CYAN, BLOCK_BLEU, BLOCK_ORANGE, BLOCK_JAUNE, BLOCK_LIME, BLOCK_MAUVE, BLOCK_ROUGE]
+
+PIECE_I = [CYAN, [0, 0], [4, 1], [5, 1], [6, 1], [7, 1]]
+PIECE_J = [BLEU, [0, 0], [4, 1], [4, 2], [5, 2], [6, 2]]
+PIECE_L = [ORANGE, [0, 0], [6, 1], [4, 2], [5, 2], [6, 2]]
+PIECE_O = [JAUNE, [0, 0], [5, 1], [6, 1], [5, 2], [6, 2]]
+PIECE_S = [LIME, [0, 0], [5, 1], [6, 1], [4, 2], [5, 2]]
+PIECE_T = [MAUVE, [0, 0], [5, 1], [4, 2], [5, 2], [6, 2]]
+PIECE_Z = [ROUGE, [0, 0], [4, 1], [5, 1], [5, 2], [6, 2]]
+
+PIECES = [PIECE_I]#, PIECE_J, PIECE_L, PIECE_O, PIECE_S, PIECE_T, PIECE_Z]
+
+OBSTACLES = [MUR, BLOCKS, PIECES]
 
 pygame.init()
 FPSCLOCK = pygame.time.Clock()
@@ -102,8 +132,7 @@ DISPLAYSURF = pygame.display.set_mode((FENETRE_LONG, FENETRE_LARG))
 
 grille = Grille(GRILLE_LONG, GRILLE_LARG)
 
-liste_blocks = [[4, 1], [5, 1] ,[6, 1], [5, 2]]
-piece = Piece(liste_blocks)
+piece = Piece()
 
 while True:
     #frame_direction = snake.direction
@@ -145,6 +174,8 @@ while True:
     if Var.GAME_OVER == False and Var.PAUSED == False:
         if piece.verif_pos() is True:
             piece.actualise_pos()
+        else:
+            piece = Piece()
     dessine()
 
     # if Var.PAUSED == True:
