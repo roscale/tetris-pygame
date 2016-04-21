@@ -1,4 +1,5 @@
 import pygame, sys, random
+import copy
 from pygame.locals import *
 
 class Grille:
@@ -10,7 +11,9 @@ class Grille:
 
 class Piece:
     def __init__(self):
-        piece_choisi = random.choice(PIECES)
+        
+        copyP = copy.deepcopy(PIECES)
+        piece_choisi = random.choice(copyP)
         self.couleur = piece_choisi[0]
         self.centre = piece_choisi[1]
         self.liste_blocks = piece_choisi[2:]
@@ -120,7 +123,7 @@ PIECE_S = [LIME, [0, 0], [5, 1], [6, 1], [4, 2], [5, 2]]
 PIECE_T = [MAUVE, [0, 0], [5, 1], [4, 2], [5, 2], [6, 2]]
 PIECE_Z = [ROUGE, [0, 0], [4, 1], [5, 1], [5, 2], [6, 2]]
 
-PIECES = [PIECE_I]#, PIECE_J, PIECE_L, PIECE_O, PIECE_S, PIECE_T, PIECE_Z]
+PIECES = [PIECE_I, PIECE_J, PIECE_L, PIECE_O, PIECE_S, PIECE_T, PIECE_Z]
 
 OBSTACLES = [MUR, BLOCKS, PIECES]
 
