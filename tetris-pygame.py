@@ -11,15 +11,18 @@ class Grille:
 
 class Piece:
     def __init__(self):
-        
+        direction2pos = {"left" : (-1, 0), "right" : (+1, 0), "up" : (0, -1), "down" : (0, +1)}
+
         copyP = copy.deepcopy(PIECES)
         piece_choisi = random.choice(copyP)
+
         self.couleur = piece_choisi[0]
         self.centre = piece_choisi[1]
         self.liste_blocks = piece_choisi[2:]
         print(PIECES[0])
 
-    def verif_pos(self):
+
+    def verif_pos(self, direction):
         ### Vérifie et modifie les coordonés ###
         verif = True
         for block in self.liste_blocks:
@@ -28,7 +31,7 @@ class Piece:
                 break
         return verif
 
-    def actualise_pos(self):
+    def actualise_pos(self, direction):
         ### Efface ###
         for block in self.liste_blocks:
             grille.matrice[block[0]][block[1]] = ESPACE
@@ -36,7 +39,8 @@ class Piece:
 
         ### Actualise les valeurs ###
         for block in range(len(self.liste_blocks)):
-            self.liste_blocks[block][1] += 1
+            self.liste_blocks[block][0] += direction[0]
+            self.liste_blocks[block][1] += direction[1]
             print("ACTUALISE VALEURS")
 
         ### Actualise la grille ###
@@ -175,8 +179,8 @@ while True:
 
 
     if Var.GAME_OVER == False and Var.PAUSED == False:
-        if piece.verif_pos() is True:
-            piece.actualise_pos()
+        if piece.verif_pos("down") is True:
+            piece.actualise_pos("down")
         else:
             piece = Piece()
     dessine()
