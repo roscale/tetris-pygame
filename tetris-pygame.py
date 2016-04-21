@@ -2,6 +2,20 @@ import pygame, sys, random
 import copy
 from pygame.locals import *
 
+class Point():
+    def __init__(self, tup):
+        self.x = tup[0]
+        self.y = tup[1]
+
+    # Pour pouvoir comparer les bloques entre eux
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+
+class Block():
+    def __init__(self, type_block, couleur):
+        self.type_block = type_block
+        self.couleur = couleur
+
 class Grille:
     def __init__(self, x, y):
         self.matrice = [[ESPACE for i in range(y)] for j in range(x)]
@@ -10,43 +24,45 @@ class Grille:
 
 
 class Piece:
-    def __init__(self):
-        direction2pos = {"left" : (-1, 0), "right" : (+1, 0), "up" : (0, -1), "down" : (0, +1)}
+    direction2pos = {"down" : (0, +1), "left" : (-1, 0), "right" : (+1, 0)}
 
+    def __init__(self):
         copyP = copy.deepcopy(PIECES)
         piece_choisi = random.choice(copyP)
 
         self.couleur = piece_choisi[0]
         self.centre = piece_choisi[1]
         self.liste_blocks = piece_choisi[2:]
-        print(PIECES[0])
+        #print(PIECES[0])
 
 
     def verif_pos(self, direction):
+        direction = Point(Piece.direction2pos[direction])
         ### Vérifie et modifie les coordonés ###
         verif = True
         for block in self.liste_blocks:
-            if grille.matrice[block[0]][block[1] + 1][0] == "block" and [block[0], block[1] + 1] not in self.liste_blocks:
+            if grille.matrice[block.x + direction.x][block.y + direction.y].type_block == "block" and Point((block.x + direction.x, block.y + direction.y)) not in self.liste_blocks:
                 verif = False
                 break
         return verif
 
     def actualise_pos(self, direction):
+        direction = Point(Piece.direction2pos[direction])
         ### Efface ###
         for block in self.liste_blocks:
-            grille.matrice[block[0]][block[1]] = ESPACE
+            grille.matrice[block.x][block.y] = ESPACE
             print("EFFACE")
 
         ### Actualise les valeurs ###
-        for block in range(len(self.liste_blocks)):
-            self.liste_blocks[block][0] += direction[0]
-            self.liste_blocks[block][1] += direction[1]
+        for block_pos in range(len(self.liste_blocks)):
+            self.liste_blocks[block_pos].x += direction.x
+            self.liste_blocks[block_pos].y += direction.y
             print("ACTUALISE VALEURS")
 
         ### Actualise la grille ###
         for block in self.liste_blocks:
             print("ACTUALISE GRILLE")
-            grille.matrice[block[0]][block[1]] = ["block", self.couleur]
+            grille.matrice[block.x][block.y] = Block("block", self.couleur)
 
 
 
@@ -78,14 +94,17 @@ def dessine():
         for block_y in range(GRILLE_LARG):
             x, y = blocks2pixels(block_x, block_y)
             if grille.matrice[block_x][block_y] != ESPACE:
-                pygame.draw.rect(DISPLAYSURF, grille.matrice[block_x][block_y][1], (x, y, BLOCK_DIM, BLOCK_DIM))
+                pygame.draw.rect(DISPLAYSURF, grille.matrice[block_x][block_y].couleur, (x, y, BLOCK_DIM, BLOCK_DIM))
 
 
 class Var:
-    FPS = 20
+    FPS = 30
     GAME_OVER = False
     PAUSED = False
     SCORE = 0
+
+TIME_MOVE = 500
+tm = 0
 
 GRILLE_LONG = 12 # blocks
 GRILLE_LARG = 24 # blocks
@@ -106,34 +125,36 @@ LIME = (0,255,0)
 MAUVE = (128, 0, 128)
 ROUGE = (255, 0, 0)
 
-ESPACE = ["espace", BG]
-MUR = ["block", ORANGE]
+ESPACE = Block("espace", BG)
+MUR = Block("block", ORANGE)
 
-BLOCK_CYAN = ["block", CYAN]
-BLOCK_BLEU = ["block", BLEU ]
-BLOCK_ORANGE = ["block", ORANGE]
-BLOCK_JAUNE = ["block", JAUNE]
-BLOCK_LIME = ["block", LIME]
-BLOCK_MAUVE = ["block", MAUVE]
-BLOCK_ROUGE = ["block", ROUGE]
+# BLOCK_CYAN = ["block", CYAN]
+# BLOCK_BLEU = ["block", BLEU ]
+# BLOCK_ORANGE = ["block", ORANGE]
+# BLOCK_JAUNE = ["block", JAUNE]
+# BLOCK_LIME = ["block", LIME]
+# BLOCK_MAUVE = ["block", MAUVE]
+# BLOCK_ROUGE = ["block", ROUGE]
 
-BLOCKS = [BLOCK_CYAN, BLOCK_BLEU, BLOCK_ORANGE, BLOCK_JAUNE, BLOCK_LIME, BLOCK_MAUVE, BLOCK_ROUGE]
+# BLOCKS = [BLOCK_CYAN, BLOCK_BLEU, BLOCK_ORANGE, BLOCK_JAUNE, BLOCK_LIME, BLOCK_MAUVE, BLOCK_ROUGE]
 
-PIECE_I = [CYAN, [0, 0], [4, 1], [5, 1], [6, 1], [7, 1]]
-PIECE_J = [BLEU, [0, 0], [4, 1], [4, 2], [5, 2], [6, 2]]
-PIECE_L = [ORANGE, [0, 0], [6, 1], [4, 2], [5, 2], [6, 2]]
-PIECE_O = [JAUNE, [0, 0], [5, 1], [6, 1], [5, 2], [6, 2]]
-PIECE_S = [LIME, [0, 0], [5, 1], [6, 1], [4, 2], [5, 2]]
-PIECE_T = [MAUVE, [0, 0], [5, 1], [4, 2], [5, 2], [6, 2]]
-PIECE_Z = [ROUGE, [0, 0], [4, 1], [5, 1], [5, 2], [6, 2]]
+PIECE_I = [CYAN, Point((0, 0)), Point((4, 1)), Point((5, 1)), Point((6, 1)), Point((7, 1))]
+PIECE_J = [BLEU, Point((0, 0)), Point((4, 1)), Point((4, 2)), Point((5, 2)), Point((6, 2))]
+PIECE_L = [ORANGE, Point((0, 0)), Point((6, 1)), Point((4, 2)), Point((5, 2)), Point((6, 2))]
+PIECE_O = [JAUNE, Point((0, 0)), Point((5, 1)), Point((6, 1)), Point((5, 2)), Point((6, 2))]
+PIECE_S = [LIME, Point((0, 0)), Point((5, 1)), Point((6, 1)), Point((4, 2)), Point((5, 2))]
+PIECE_T = [MAUVE, Point((0, 0)), Point((5, 1)), Point((4, 2)), Point((5, 2)), Point((6, 2))]
+PIECE_Z = [ROUGE, Point((0, 0)), Point((4, 1)), Point((5, 1)), Point((5, 2)), Point((6, 2))]
 
-PIECES = [PIECE_I, PIECE_J, PIECE_L, PIECE_O, PIECE_S, PIECE_T, PIECE_Z]
+PIECES = (PIECE_I, PIECE_J, PIECE_L, PIECE_O, PIECE_S, PIECE_T, PIECE_Z)
 
-OBSTACLES = [MUR, BLOCKS, PIECES]
+OBSTACLES = (MUR, PIECES)
 
 pygame.init()
 FPSCLOCK = pygame.time.Clock()
 DISPLAYSURF = pygame.display.set_mode((FENETRE_LONG, FENETRE_LARG))
+pygame.key.set_repeat(200, 50)
+
 #pygame.display.set_caption('Snake - Score: {}'.format(Var.SCORE))
 #message() # Juste pour l'initialisation
 
@@ -150,40 +171,45 @@ while True:
             pygame.quit()
             sys.exit()
 
-        # if event.type == pygame.KEYDOWN:
-        #     if Var.GAME_OVER == False and Var.PAUSED == False:
-        #         if (event.key == pygame.K_UP or event.key == pygame.K_z) and frame_direction != "down":
-        #             snake.direction = "up"
-        #         elif (event.key == pygame.K_DOWN or event.key == pygame.K_s) and frame_direction != "up":
-        #             snake.direction = "down"
-        #         elif (event.key == pygame.K_LEFT or event.key == pygame.K_q) and frame_direction != "right":
-        #             snake.direction = "left"
-        #         elif (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and frame_direction != "left":
-        #             snake.direction = "right"
-        #
-        #     if (event.key == pygame.K_SPACE or event.key == pygame.K_p) and Var.GAME_OVER == False:
-        #         if Var.PAUSED == False:
-        #             Var.PAUSED = True
-        #             pygame.display.set_caption('Snake - Score: {} (Paused)'.format(Var.SCORE))
-        #
-        #         else:
-        #             Var.PAUSED = False
-        #             pygame.display.set_caption('Snake - Score: {}'.format(Var.SCORE))
-        #
-        #     if Var.GAME_OVER == True:
-        #         if event.key == pygame.K_r:
-        #             reset()
-        #         elif event.key == pygame.K_ESCAPE:
-        #             pygame.quit()
-        #             sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if Var.GAME_OVER == False and Var.PAUSED == False:
+                # if (event.key == pygame.K_UP or event.key == pygame.K_z):
+                #     if piece.verif_pos("up") is True:
+                #         piece.actualise_pos("up")
+                if (event.key == pygame.K_DOWN or event.key == pygame.K_s):
+                    if piece.verif_pos("down") is True:
+                        piece.actualise_pos("down")
+                elif (event.key == pygame.K_LEFT or event.key == pygame.K_q):
+                    if piece.verif_pos("left") is True:
+                        piece.actualise_pos("left")
+                elif (event.key == pygame.K_RIGHT or event.key == pygame.K_d):
+                    if piece.verif_pos("right") is True:
+                        piece.actualise_pos("right")
+
+            # if (event.key == pygame.K_SPACE or event.key == pygame.K_p) and Var.GAME_OVER == False:
+            #     if Var.PAUSED == False:
+            #         Var.PAUSED = True
+            #         pygame.display.set_caption('Snake - Score: {} (Paused)'.format(Var.SCORE))
+            #
+            #     else:
+            #         Var.PAUSED = False
+            #         pygame.display.set_caption('Snake - Score: {}'.format(Var.SCORE))
+            #
+            # if Var.GAME_OVER == True:
+            #     if event.key == pygame.K_r:
+            #         reset()
+            #     elif event.key == pygame.K_ESCAPE:
+            #         pygame.quit()
+            #         sys.exit()
 
 
     if Var.GAME_OVER == False and Var.PAUSED == False:
-        if piece.verif_pos("down") is True:
-            piece.actualise_pos("down")
-        else:
-            piece = Piece()
-    dessine()
+        if pygame.time.get_ticks() - tm > TIME_MOVE:
+            if piece.verif_pos("down") is True:
+                piece.actualise_pos("down")
+                tm = pygame.time.get_ticks()
+            else:
+                piece = Piece()
 
     # if Var.PAUSED == True:
     #     message('Paused')
@@ -196,6 +222,6 @@ while True:
     #     DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
     #
     #     pygame.display.set_caption('Snake - Score: {} (Game Over)'.format(Var.SCORE))
-
+    dessine()
     pygame.display.update()
     FPSCLOCK.tick(Var.FPS)
