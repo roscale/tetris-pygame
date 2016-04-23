@@ -1,8 +1,8 @@
 import pygame, sys, random
-import copy
 from pygame.locals import *
+import copy
 
-class Point():
+class Point:
     def __init__(self, tup):
         self.x = tup[0]
         self.y = tup[1]
@@ -11,7 +11,7 @@ class Point():
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
-class Block():
+class Block:
     def __init__(self, type_block, couleur):
         self.type_block = type_block
         self.couleur = couleur
@@ -22,47 +22,109 @@ class Grille:
         self.longueur = x
         self.largeur = y
 
+    def efface_lignes_completes(self):
+        collone = 1
+        ligne = self.largeur - 2
+
+        while ligne >= 1:
+            ### Vérifie si la ligne est complète
+            complete = True
+            for collone in range(1, self.longueur - 1):
+                #print(self.matrice[collone][ligne].type_block)
+                if self.matrice[collone][ligne].type_block != "obstacle":
+                    complete = False
+                    #print("({}, {})".format(ligne, collone))
+
+            if complete is True:
+                print("({}, {})".format(ligne, collone))
+                for ligne_c in range(ligne, 1, -1):
+                    for collone_c in range(1, self.longueur - 1):
+                        print(self.matrice[collone_c][ligne_c].type_block)
+                        self.matrice[collone_c][ligne_c] = self.matrice[collone_c][ligne_c - 1]
+            else:
+                ligne -= 1
+            #print("\n")
 
 class Piece:
-    direction2pos = {"down" : (0, +1), "left" : (-1, 0), "right" : (+1, 0)}
+    directions = {"down":(0, +1), "left":(-1, 0), "right":(+1, 0), "meme":(0, 0)}
 
     def __init__(self):
         copyP = copy.deepcopy(PIECES)
         piece_choisi = random.choice(copyP)
 
+        self.rotation = 0
+        self.rotation_actuelle = 0
         self.couleur = piece_choisi[0]
-        self.centre = piece_choisi[1]
-        self.liste_blocks = piece_choisi[2:]
+
+        self.liste_blocks = []
+        for i in range(1, 14, 4):
+            self.liste_blocks.append(piece_choisi[i:i+4])
         #print(PIECES[0])
 
 
-    def verif_pos(self, direction):
-        direction = Point(Piece.direction2pos[direction])
+    def verif_pos(self, direction="meme", rotation=None):
+        direction = Point(Piece.directions[direction])
+
+        if rotation is None:
+            rotation = self.rotation_actuelle
+
         ### Vérifie et modifie les coordonés ###
         verif = True
-        for block in self.liste_blocks:
-            if grille.matrice[block.x + direction.x][block.y + direction.y].type_block == "block" and Point((block.x + direction.x, block.y + direction.y)) not in self.liste_blocks:
+        for block in self.liste_blocks[rotation]:
+            # try:
+            # print(grille.matrice[block.x + direction.x][block.y + direction.y].type_block)
+            if grille.matrice[block.x + direction.x][block.y + direction.y].type_block == "obstacle":
+                # print("DA")
                 verif = False
                 break
+        # except:
+            # verif = False
+            # break
         return verif
 
-    def actualise_pos(self, direction):
-        direction = Point(Piece.direction2pos[direction])
-        ### Efface ###
-        for block in self.liste_blocks:
-            grille.matrice[block.x][block.y] = ESPACE
-            print("EFFACE")
+    def actualise_pos(self, direction="meme", rotation=None):
+        direction = Point(Piece.directions[direction])
 
+        if rotation is None:
+            rotation = self.rotation_actuelle
+
+        ### Efface ###
+        #print(self.liste_blocks[0])
+        for block in self.liste_blocks[self.rotation_actuelle]:
+            grille.matrice[block.x][block.y] = ESPACE
+            #print("EFFACE")
+
+        c = 0
         ### Actualise les valeurs ###
-        for block_pos in range(len(self.liste_blocks)):
-            self.liste_blocks[block_pos].x += direction.x
-            self.liste_blocks[block_pos].y += direction.y
-            print("ACTUALISE VALEURS")
+        for rot in range(len(self.liste_blocks)):
+            for block_pos in range(len(self.liste_blocks[rot])):
+                self.liste_blocks[rot][block_pos].x += direction.x
+                self.liste_blocks[rot][block_pos].y += direction.y
+                #print("ACTUALISE VALEURS")
+                c += 1
+                # print("len rot {}".format(len(self.liste_blocks)))
+                # print("({}, {})".format(self.liste_blocks[rot][block_pos].x, self.liste_blocks[rot][block_pos].y))
+        print(c)
 
         ### Actualise la grille ###
-        for block in self.liste_blocks:
-            print("ACTUALISE GRILLE")
+        for block in self.liste_blocks[rotation]:
+            #print("ACTUALISE GRILLE")
             grille.matrice[block.x][block.y] = Block("block", self.couleur)
+
+        self.rotation_actuelle = rotation
+
+    def tourner(self):
+        ### Faire le cycle des rotations
+        self.rotation += 1
+        if self.rotation > 3:
+            self.rotation = 0
+
+        if self.verif_pos(rotation=self.rotation) is True:
+            self.actualise_pos(rotation=self.rotation)
+        else:
+            ### Revenir à la rotation précédente
+            self.rotation -= 1
+
 
 
 
@@ -126,7 +188,7 @@ MAUVE = (128, 0, 128)
 ROUGE = (255, 0, 0)
 
 ESPACE = Block("espace", BG)
-MUR = Block("block", ORANGE)
+MUR = Block("obstacle", ORANGE)
 
 # BLOCK_CYAN = ["block", CYAN]
 # BLOCK_BLEU = ["block", BLEU ]
@@ -138,13 +200,41 @@ MUR = Block("block", ORANGE)
 
 # BLOCKS = [BLOCK_CYAN, BLOCK_BLEU, BLOCK_ORANGE, BLOCK_JAUNE, BLOCK_LIME, BLOCK_MAUVE, BLOCK_ROUGE]
 
-PIECE_I = [CYAN, Point((0, 0)), Point((4, 1)), Point((5, 1)), Point((6, 1)), Point((7, 1))]
-PIECE_J = [BLEU, Point((0, 0)), Point((4, 1)), Point((4, 2)), Point((5, 2)), Point((6, 2))]
-PIECE_L = [ORANGE, Point((0, 0)), Point((6, 1)), Point((4, 2)), Point((5, 2)), Point((6, 2))]
-PIECE_O = [JAUNE, Point((0, 0)), Point((5, 1)), Point((6, 1)), Point((5, 2)), Point((6, 2))]
-PIECE_S = [LIME, Point((0, 0)), Point((5, 1)), Point((6, 1)), Point((4, 2)), Point((5, 2))]
-PIECE_T = [MAUVE, Point((0, 0)), Point((5, 1)), Point((4, 2)), Point((5, 2)), Point((6, 2))]
-PIECE_Z = [ROUGE, Point((0, 0)), Point((4, 1)), Point((5, 1)), Point((5, 2)), Point((6, 2))]
+PIECE_I = [CYAN, Point((4, 1)), Point((5, 1)), Point((6, 1)), Point((7, 1)),
+                 Point((5, -1)), Point((5, 0)), Point((5, 1)), Point((5, 2)),
+                 Point((4, 1)), Point((5, 1)), Point((6, 1)), Point((7, 1)),
+                 Point((5, -1)), Point((5, 0)), Point((5, 1)), Point((5, 2))]
+
+PIECE_J = [BLEU, Point((4, 1)), Point((4, 2)), Point((5, 2)), Point((6, 2)),
+                 Point((5, 1)), Point((6, 1)), Point((5, 2)), Point((5, 3)),
+                 Point((4, 2)), Point((5, 2)), Point((6, 2)), Point((6, 3)),
+                 Point((5, 1)), Point((5, 2)), Point((4, 3)), Point((5, 3))]
+
+PIECE_L = [ORANGE, Point((6, 1)), Point((4, 2)), Point((5, 2)), Point((6, 2)),
+                   Point((5, 1)), Point((5, 2)), Point((5, 3)), Point((6, 3)),
+                   Point((4, 2)), Point((5, 2)), Point((6, 2)), Point((4, 3)),
+                   Point((4, 1)), Point((5, 1)), Point((5, 2)), Point((5, 3))]
+
+PIECE_O = [JAUNE, Point((5, 1)), Point((6, 1)), Point((5, 2)), Point((6, 2)),
+                  Point((5, 1)), Point((6, 1)), Point((5, 2)), Point((6, 2)),
+                  Point((5, 1)), Point((6, 1)), Point((5, 2)), Point((6, 2)),
+                  Point((5, 1)), Point((6, 1)), Point((5, 2)), Point((6, 2))]
+
+PIECE_S = [LIME, Point((5, 1)), Point((6, 1)), Point((4, 2)), Point((5, 2)),
+                 Point((5, 0)), Point((5, 1)), Point((6, 1)), Point((6, 2)),
+                 Point((5, 1)), Point((6, 1)), Point((4, 2)), Point((5, 2)),
+                 Point((5, 0)), Point((5, 1)), Point((6, 1)), Point((6, 2))]
+
+PIECE_T = [MAUVE, Point((5, 1)), Point((4, 2)), Point((5, 2)), Point((6, 2)),
+                  Point((5, 1)), Point((5, 2)), Point((6, 2)), Point((5, 3)),
+                  Point((4, 2)), Point((5, 2)), Point((6, 2)), Point((5, 3)),
+                  Point((5, 1)), Point((4, 2)), Point((5, 2)), Point((5, 3))]
+
+PIECE_Z = [ROUGE, Point((4, 1)), Point((5, 1)), Point((5, 2)), Point((6, 2)),
+                  Point((6, 0)), Point((5, 1)), Point((6, 1)), Point((5, 2)),
+                  Point((4, 1)), Point((5, 1)), Point((5, 2)), Point((6, 2)),
+                  Point((6, 0)), Point((5, 1)), Point((6, 1)), Point((5, 2))]
+
 
 PIECES = (PIECE_I, PIECE_J, PIECE_L, PIECE_O, PIECE_S, PIECE_T, PIECE_Z)
 
@@ -173,9 +263,8 @@ while True:
 
         if event.type == pygame.KEYDOWN:
             if Var.GAME_OVER == False and Var.PAUSED == False:
-                # if (event.key == pygame.K_UP or event.key == pygame.K_z):
-                #     if piece.verif_pos("up") is True:
-                #         piece.actualise_pos("up")
+                if (event.key == pygame.K_UP or event.key == pygame.K_z):
+                    piece.tourner()
                 if (event.key == pygame.K_DOWN or event.key == pygame.K_s):
                     if piece.verif_pos("down") is True:
                         piece.actualise_pos("down")
@@ -209,6 +298,13 @@ while True:
                 piece.actualise_pos("down")
                 tm = pygame.time.get_ticks()
             else:
+                ### Trensforme la pièce dans un obstacle
+                for block in piece.liste_blocks[piece.rotation_actuelle]:
+                    print("ACTUALISE GRILLE")
+                    grille.matrice[block.x][block.y] = Block("obstacle", piece.couleur)
+                    grille.efface_lignes_completes()
+
+                ### Spawn une nouvelle pièce
                 piece = Piece()
 
     # if Var.PAUSED == True:
