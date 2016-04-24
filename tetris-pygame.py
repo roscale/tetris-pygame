@@ -7,7 +7,7 @@ class Point:
         self.x = tup[0]
         self.y = tup[1]
 
-    # Pour pouvoir comparer les bloques entre eux
+    # Pour pouvoir comparer la position des bloques entre elles
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
@@ -41,9 +41,12 @@ class Grille:
                     for collone_c in range(1, self.longueur - 1):
                         print(self.matrice[collone_c][ligne_c].type_block)
                         self.matrice[collone_c][ligne_c] = self.matrice[collone_c][ligne_c - 1]
+                Var.SCORE += 10
+                Var.VITESSE -= 10
             else:
                 ligne -= 1
             #print("\n")
+
 
 class Piece:
     directions = {"down":(0, +1), "left":(-1, 0), "right":(+1, 0), "meme":(0, 0)}
@@ -113,15 +116,6 @@ class Piece:
 
         self.rotation_actuelle = rotation
 
-    # def bouge(self, direction):
-    #     val = False
-    #     if piece.verif_pos(direction=direction) is True:
-    #         val = True
-    #         piece.actualise_pos(direction=direction)
-    #         if direction == "down":
-    #             Var.TICKS = pygame.time.get_ticks()
-    #     return val
-
     def tourne(self):
         ### Faire le cycle des rotations
         self.rotation += 1
@@ -137,22 +131,12 @@ class Piece:
 
 
 
-    # def verif_point_mange(self):
-    #     if self.pos == point.pos:     ## Si le point est mangé
-    #         point.spawn_point()
-    #         self.blocks += 1
-    #         Var.SCORE += 1
-    #         pygame.display.set_caption('Snake - Score: {}'.format(Var.SCORE))
-    #         Var.FPS += 0.25
-
-
 def blocks2pixels(x, y):
     return (x * BLOCK_DIM), (y * BLOCK_DIM)
 
 def dessine():
     ### Murs ###
     for block_y in range(GRILLE_LARG - 1):
-        #x, y = blocks2pixels(0, block_y)
         grille.matrice[0][block_y] = MUR
         grille.matrice[GRILLE_LONG - 1][block_y] = MUR
 
@@ -167,6 +151,24 @@ def dessine():
             if grille.matrice[block_x][block_y] != ESPACE:
                 pygame.draw.rect(DISPLAYSURF, grille.matrice[block_x][block_y].couleur, (x, y, BLOCK_DIM, BLOCK_DIM))
 
+def message(msg='', dim=32, pos=None):
+    if pos is None:
+        pos = FENETRE_LONG // 2, FENETRE_LARG // 2
+    Var.fontObj = pygame.font.Font('freesansbold.ttf', dim)
+    Var.textSurfaceObj = Var.fontObj.render(msg, True, (255, 255, 255))
+    Var.textRectObj = Var.textSurfaceObj.get_rect()
+    Var.textRectObj.center = pos
+
+def reset():
+    global grille
+    global piece
+    Var.GAME_OVER = False
+    Var.VITESSE = 500
+    Var.SCORE = 0
+    grille = Grille(GRILLE_LONG, GRILLE_LARG)
+    piece = Piece()
+    piece.actualise_pos()
+    Var.TICKS = pygame.time.get_ticks()
 
 class Var:
     TICKS = 0
@@ -177,7 +179,7 @@ class Var:
 
 GRILLE_LONG = 12 # blocks
 GRILLE_LARG = 23 # blocks
-BLOCK_DIM = 20 # px
+BLOCK_DIM = 30 # px
 FENETRE_LONG = GRILLE_LONG * BLOCK_DIM
 FENETRE_LARG = GRILLE_LARG * BLOCK_DIM - 2 * BLOCK_DIM
 
@@ -196,16 +198,6 @@ ROUGE = (255, 0, 0)
 
 ESPACE = Block("espace", BG)
 MUR = Block("obstacle", ORANGE)
-
-# BLOCK_CYAN = ["block", CYAN]
-# BLOCK_BLEU = ["block", BLEU ]
-# BLOCK_ORANGE = ["block", ORANGE]
-# BLOCK_JAUNE = ["block", JAUNE]
-# BLOCK_LIME = ["block", LIME]
-# BLOCK_MAUVE = ["block", MAUVE]
-# BLOCK_ROUGE = ["block", ROUGE]
-
-# BLOCKS = [BLOCK_CYAN, BLOCK_BLEU, BLOCK_ORANGE, BLOCK_JAUNE, BLOCK_LIME, BLOCK_MAUVE, BLOCK_ROUGE]
 
 PIECE_I = [CYAN, Point((4, 1)), Point((5, 1)), Point((6, 1)), Point((7, 1)),
                  Point((5, -1)), Point((5, 0)), Point((5, 1)), Point((5, 2)),
@@ -245,24 +237,16 @@ PIECE_Z = [ROUGE, Point((4, 0)), Point((5, 0)), Point((5, 1)), Point((6, 1)),
 
 PIECES = (PIECE_I, PIECE_J, PIECE_L, PIECE_O, PIECE_S, PIECE_T, PIECE_Z)
 
-OBSTACLES = (MUR, PIECES)
-
 pygame.init()
 FPSCLOCK = pygame.time.Clock()
 DISPLAYSURF = pygame.display.set_mode((FENETRE_LONG, FENETRE_LARG))
 pygame.key.set_repeat(200, 50)
 
-#pygame.display.set_caption('Snake - Score: {}'.format(Var.SCORE))
-#message() # Juste pour l'initialisation
-
 grille = Grille(GRILLE_LONG, GRILLE_LARG)
-
 piece = Piece()
 piece.actualise_pos()
 
 while True:
-    #frame_direction = snake.direction
-
     DISPLAYSURF.fill(BG)
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -270,42 +254,34 @@ while True:
             sys.exit()
 
         if event.type == pygame.KEYDOWN:
-            if Var.GAME_OVER == False:
-                if (event.key == pygame.K_UP or event.key == pygame.K_z):
+            if Var.GAME_OVER is False:
+                if event.key == pygame.K_UP or event.key == pygame.K_z:
                     piece.tourne()
-                elif (event.key == pygame.K_DOWN or event.key == pygame.K_s):
+                elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
                     if piece.verif_pos("down") is True:
                         piece.actualise_pos("down")
                         Var.TICKS = pygame.time.get_ticks() ###
-                elif (event.key == pygame.K_LEFT or event.key == pygame.K_q):
+                elif event.key == pygame.K_LEFT or event.key == pygame.K_q:
                     if piece.verif_pos("left") is True:
                         piece.actualise_pos("left")
-                elif (event.key == pygame.K_RIGHT or event.key == pygame.K_d):
+                elif event.key == pygame.K_RIGHT or event.key == pygame.K_d:
                     if piece.verif_pos("right") is True:
                         piece.actualise_pos("right")
-                elif (event.key == pygame.K_SPACE):
+                elif event.key == pygame.K_SPACE:
                     while piece.verif_pos("down") is True:
                         piece.actualise_pos("down")
+
                     Var.TICKS = pygame.time.get_ticks() - Var.VITESSE
 
-            # if (event.key == pygame.K_SPACE or event.key == pygame.K_p) and Var.GAME_OVER == False:
-            #     if Var.PAUSED == False:
-            #         Var.PAUSED = True
-            #         pygame.display.set_caption('Snake - Score: {} (Paused)'.format(Var.SCORE))
-            #
-            #     else:
-            #         Var.PAUSED = False
-            #         pygame.display.set_caption('Snake - Score: {}'.format(Var.SCORE))
-            #
-            # if Var.GAME_OVER == True:
-            #     if event.key == pygame.K_r:
-            #         reset()
-            #     elif event.key == pygame.K_ESCAPE:
-            #         pygame.quit()
-            #         sys.exit()
+            else:
+                if event.key == pygame.K_r:
+                    reset()
+                elif event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
 
-
-    if Var.GAME_OVER == False:
+    if Var.GAME_OVER is False:
+        pygame.display.set_caption('Tetris - Score: {}'.format(Var.SCORE))
         ### Attend le moment d'actualiser la pièce
         if pygame.time.get_ticks() - Var.TICKS > Var.VITESSE:
             if piece.verif_pos("down") is True:
@@ -325,21 +301,16 @@ while True:
                     piece.actualise_pos()
                 else:
                     Var.GAME_OVER = True
-                    ### Écris "Game Over"
 
             Var.TICKS = pygame.time.get_ticks()
 
-    # if Var.PAUSED == True:
-    #     message('Paused')
-    #     DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
-    #
-    # if Var.GAME_OVER == True:
-    #     message('Game Over')
-    #     DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
-    #     message('(appuyez [r] pour recommencer et [ESC] pour quitter)', 16, (FENETRE_LONG // 2, FENETRE_LARG // 2 + 30))
-    #     DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
-    #
-    #     pygame.display.set_caption('Snake - Score: {} (Game Over)'.format(Var.SCORE))
     dessine()
+
+    if Var.GAME_OVER is True:
+        message('Game Over')
+        DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
+        message('(appuyez [r] pour recommencer ou [ESC] pour quitter)', 13, (FENETRE_LONG // 2, FENETRE_LARG // 2 + 30))
+        DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
+
     pygame.display.update()
     FPSCLOCK.tick(Var.FPS)
