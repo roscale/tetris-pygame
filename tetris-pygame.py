@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Rosca Alex 4TB
+# tetris-pygame.py – 21.04.16
+
 import pygame, sys, random
 from pygame.locals import *
 import copy
