@@ -68,6 +68,7 @@ class Piece:
         for i in range(1, 14, 4):
             self.liste_blocks.append(piece_choisi[i:i+4])
         #print(PIECES[0])
+        self.deja_bouge = False
 
 
     def verif_pos(self, direction="meme", rotation=None):
@@ -81,6 +82,7 @@ class Piece:
         for block in self.liste_blocks[rotation]:
             # try:
             # print(grille.matrice[block.x + direction.x][block.y + direction.y].type_block)
+            print(block.x + direction.x)
             if grille.matrice[block.x + direction.x][block.y + direction.y].type_block == "obstacle":
                 # print("DA")
                 verif = False
@@ -91,7 +93,8 @@ class Piece:
         return verif
 
     def actualise_pos(self, direction="meme", rotation=None):
-        direction = Point(Piece.directions[direction])
+        if direction is not tuple:
+            direction = Point(Piece.directions[direction])
 
         if rotation is None:
             rotation = self.rotation_actuelle
@@ -133,13 +136,24 @@ class Piece:
             ### Revenir à la rotation précédente
             self.rotation -= 1
 
+    def bouge2pos(self, pos):
+        if self.deja_bouge == False:
+            for block in self.liste_blocks[0]:
+                block.x += pos.x
+                block.y += pos.y
+            self.deja_bouge = True
+
+        for block in self.liste_blocks[0]:
+            x, y = blocks2pixels(block.x, block.y - 2)
+            pygame.draw.rect(DISPLAYSURF, self.couleur, (x, y, BLOCK_DIM, BLOCK_DIM))
+
 
 
 
 def blocks2pixels(x, y):
     return (x * BLOCK_DIM), (y * BLOCK_DIM)
 
-def dessine():
+def dessine_grille():
     ### Murs ###
     for block_y in range(GRILLE_LARG - 1):
         grille.matrice[0][block_y] = MUR
@@ -185,8 +199,8 @@ class Var:
 GRILLE_LONG = 12 # blocks
 GRILLE_LARG = 23 # blocks
 BLOCK_DIM = 30 # px
-FENETRE_LONG = GRILLE_LONG * BLOCK_DIM
-FENETRE_LARG = GRILLE_LARG * BLOCK_DIM - 2 * BLOCK_DIM
+FENETRE_LONG = GRILLE_LONG * BLOCK_DIM# + 5 * BLOCK_DIM
+FENETRE_LARG = GRILLE_LARG * BLOCK_DIM + 2 * BLOCK_DIM# - 2 * BLOCK_DIM
 
 VERT = (0, 204, 0)
 NOIR = (0, 0, 0)
@@ -248,8 +262,14 @@ DISPLAYSURF = pygame.display.set_mode((FENETRE_LONG, FENETRE_LARG))
 pygame.key.set_repeat(200, 50)
 
 grille = Grille(GRILLE_LONG, GRILLE_LARG)
+
 piece = Piece()
+piece_prochaine = Piece()
+piece_prochaine.bouge2pos(Point((0, GRILLE_LARG + 1)))
+
+# piece_prochaine.actualise_pos
 piece.actualise_pos()
+
 
 while True:
     DISPLAYSURF.fill(BG)
@@ -300,8 +320,13 @@ while True:
                 ### Verifie et efface les lignes complètes
                 grille.efface_lignes_completes()
 
-                ### Spawn une nouvelle pièce
-                piece = Piece()
+                ### Copie la piece prochaine et fais une nouvelle
+                piece = copy.deepcopy(piece_prochaine)
+                piece.deja_bouge = False
+                piece.bouge2pos(Point((0, -(GRILLE_LARG + 1))))
+                piece_prochaine = Piece()
+                piece_prochaine.bouge2pos(Point((0, GRILLE_LARG + 1)))
+
                 if piece.verif_pos() is True:
                     piece.actualise_pos()
                 else:
@@ -309,7 +334,8 @@ while True:
 
             Var.TICKS = pygame.time.get_ticks()
 
-    dessine()
+    dessine_grille()
+    piece_prochaine.bouge2pos(Point((0, GRILLE_LARG + 1)))
 
     if Var.GAME_OVER is True:
         message('Game Over')
