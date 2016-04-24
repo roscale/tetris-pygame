@@ -113,12 +113,21 @@ class Piece:
 
         self.rotation_actuelle = rotation
 
-    def tourner(self):
+    # def bouge(self, direction):
+    #     val = False
+    #     if piece.verif_pos(direction=direction) is True:
+    #         val = True
+    #         piece.actualise_pos(direction=direction)
+    #         if direction == "down":
+    #             Var.TICKS = pygame.time.get_ticks()
+    #     return val
+
+    def tourne(self):
         ### Faire le cycle des rotations
         self.rotation += 1
         if self.rotation > 3:
             self.rotation = 0
-
+        ### Verifier et actialiser la rotation
         if self.verif_pos(rotation=self.rotation) is True:
             self.actualise_pos(rotation=self.rotation)
         else:
@@ -142,37 +151,35 @@ def blocks2pixels(x, y):
 
 def dessine():
     ### Murs ###
-    for block_y in range(GRILLE_LARG):
-        x, y = blocks2pixels(0, block_y)
-        if block_y == 0 or block_y == GRILLE_LARG - 1:
-            for block_x in range(GRILLE_LONG):
-                grille.matrice[block_x][block_y] = MUR
-        else:
-            grille.matrice[0][block_y] = MUR
-            grille.matrice[GRILLE_LONG - 1][block_y] = MUR
+    for block_y in range(GRILLE_LARG - 1):
+        #x, y = blocks2pixels(0, block_y)
+        grille.matrice[0][block_y] = MUR
+        grille.matrice[GRILLE_LONG - 1][block_y] = MUR
+
+    ### Sol
+    for block_x in range(GRILLE_LONG):
+        grille.matrice[block_x][block_y + 1] = MUR
 
     ### Éléments du jeu ###
     for block_x in range(GRILLE_LONG):
-        for block_y in range(GRILLE_LARG):
-            x, y = blocks2pixels(block_x, block_y)
+        for block_y in range(2, GRILLE_LARG):
+            x, y = blocks2pixels(block_x, block_y - 2)
             if grille.matrice[block_x][block_y] != ESPACE:
                 pygame.draw.rect(DISPLAYSURF, grille.matrice[block_x][block_y].couleur, (x, y, BLOCK_DIM, BLOCK_DIM))
 
 
 class Var:
+    TICKS = 0
+    VITESSE = 500
     FPS = 30
     GAME_OVER = False
-    PAUSED = False
     SCORE = 0
 
-TIME_MOVE = 500
-tm = 0
-
 GRILLE_LONG = 12 # blocks
-GRILLE_LARG = 24 # blocks
+GRILLE_LARG = 23 # blocks
 BLOCK_DIM = 20 # px
 FENETRE_LONG = GRILLE_LONG * BLOCK_DIM
-FENETRE_LARG = GRILLE_LARG * BLOCK_DIM
+FENETRE_LARG = GRILLE_LARG * BLOCK_DIM - 2 * BLOCK_DIM
 
 VERT = (0, 204, 0)
 NOIR = (0, 0, 0)
@@ -205,35 +212,35 @@ PIECE_I = [CYAN, Point((4, 1)), Point((5, 1)), Point((6, 1)), Point((7, 1)),
                  Point((4, 1)), Point((5, 1)), Point((6, 1)), Point((7, 1)),
                  Point((5, -1)), Point((5, 0)), Point((5, 1)), Point((5, 2))]
 
-PIECE_J = [BLEU, Point((4, 1)), Point((4, 2)), Point((5, 2)), Point((6, 2)),
-                 Point((5, 1)), Point((6, 1)), Point((5, 2)), Point((5, 3)),
-                 Point((4, 2)), Point((5, 2)), Point((6, 2)), Point((6, 3)),
-                 Point((5, 1)), Point((5, 2)), Point((4, 3)), Point((5, 3))]
+PIECE_J = [BLEU, Point((4, 0)), Point((4, 1)), Point((5, 1)), Point((6, 1)),
+                 Point((5, 0)), Point((6, 0)), Point((5, 1)), Point((5, 2)),
+                 Point((4, 1)), Point((5, 1)), Point((6, 1)), Point((6, 2)),
+                 Point((5, 0)), Point((5, 1)), Point((4, 2)), Point((5, 2))]
 
-PIECE_L = [ORANGE, Point((6, 1)), Point((4, 2)), Point((5, 2)), Point((6, 2)),
-                   Point((5, 1)), Point((5, 2)), Point((5, 3)), Point((6, 3)),
-                   Point((4, 2)), Point((5, 2)), Point((6, 2)), Point((4, 3)),
-                   Point((4, 1)), Point((5, 1)), Point((5, 2)), Point((5, 3))]
+PIECE_L = [ORANGE, Point((6, 0)), Point((4, 1)), Point((5, 1)), Point((6, 1)),
+                   Point((5, 0)), Point((5, 1)), Point((5, 2)), Point((6, 2)),
+                   Point((4, 1)), Point((5, 1)), Point((6, 1)), Point((4, 2)),
+                   Point((4, 0)), Point((5, 0)), Point((5, 1)), Point((5, 2))]
 
-PIECE_O = [JAUNE, Point((5, 1)), Point((6, 1)), Point((5, 2)), Point((6, 2)),
-                  Point((5, 1)), Point((6, 1)), Point((5, 2)), Point((6, 2)),
-                  Point((5, 1)), Point((6, 1)), Point((5, 2)), Point((6, 2)),
-                  Point((5, 1)), Point((6, 1)), Point((5, 2)), Point((6, 2))]
+PIECE_O = [JAUNE, Point((5, 0)), Point((6, 0)), Point((5, 1)), Point((6, 1)),
+                  Point((5, 0)), Point((6, 0)), Point((5, 1)), Point((6, 1)),
+                  Point((5, 0)), Point((6, 0)), Point((5, 1)), Point((6, 1)),
+                  Point((5, 0)), Point((6, 0)), Point((5, 1)), Point((6, 1))]
 
-PIECE_S = [LIME, Point((5, 1)), Point((6, 1)), Point((4, 2)), Point((5, 2)),
-                 Point((5, 0)), Point((5, 1)), Point((6, 1)), Point((6, 2)),
-                 Point((5, 1)), Point((6, 1)), Point((4, 2)), Point((5, 2)),
-                 Point((5, 0)), Point((5, 1)), Point((6, 1)), Point((6, 2))]
+PIECE_S = [LIME, Point((5, 0)), Point((6, 0)), Point((4, 1)), Point((5, 1)),
+                 Point((5, -1)), Point((5, 0)), Point((6, 0)), Point((6, 1)),
+                 Point((5, 0)), Point((6, 0)), Point((4, 1)), Point((5, 1)),
+                 Point((5, -1)), Point((5, 0)), Point((6, 0)), Point((6, 1))]
 
-PIECE_T = [MAUVE, Point((5, 1)), Point((4, 2)), Point((5, 2)), Point((6, 2)),
-                  Point((5, 1)), Point((5, 2)), Point((6, 2)), Point((5, 3)),
-                  Point((4, 2)), Point((5, 2)), Point((6, 2)), Point((5, 3)),
-                  Point((5, 1)), Point((4, 2)), Point((5, 2)), Point((5, 3))]
+PIECE_T = [MAUVE, Point((5, 0)), Point((4, 1)), Point((5, 1)), Point((6, 1)),
+                  Point((5, 0)), Point((5, 1)), Point((6, 1)), Point((5, 2)),
+                  Point((4, 1)), Point((5, 1)), Point((6, 1)), Point((5, 2)),
+                  Point((5, 0)), Point((4, 1)), Point((5, 1)), Point((5, 2))]
 
-PIECE_Z = [ROUGE, Point((4, 1)), Point((5, 1)), Point((5, 2)), Point((6, 2)),
-                  Point((6, 0)), Point((5, 1)), Point((6, 1)), Point((5, 2)),
-                  Point((4, 1)), Point((5, 1)), Point((5, 2)), Point((6, 2)),
-                  Point((6, 0)), Point((5, 1)), Point((6, 1)), Point((5, 2))]
+PIECE_Z = [ROUGE, Point((4, 0)), Point((5, 0)), Point((5, 1)), Point((6, 1)),
+                  Point((6, -1)), Point((5, 0)), Point((6, 0)), Point((5, 1)),
+                  Point((4, 0)), Point((5, 0)), Point((5, 1)), Point((6, 1)),
+                  Point((6, -1)), Point((5, 0)), Point((6, 0)), Point((5, 1))]
 
 
 PIECES = (PIECE_I, PIECE_J, PIECE_L, PIECE_O, PIECE_S, PIECE_T, PIECE_Z)
@@ -251,6 +258,7 @@ pygame.key.set_repeat(200, 50)
 grille = Grille(GRILLE_LONG, GRILLE_LARG)
 
 piece = Piece()
+piece.actualise_pos()
 
 while True:
     #frame_direction = snake.direction
@@ -262,18 +270,23 @@ while True:
             sys.exit()
 
         if event.type == pygame.KEYDOWN:
-            if Var.GAME_OVER == False and Var.PAUSED == False:
+            if Var.GAME_OVER == False:
                 if (event.key == pygame.K_UP or event.key == pygame.K_z):
-                    piece.tourner()
-                if (event.key == pygame.K_DOWN or event.key == pygame.K_s):
+                    piece.tourne()
+                elif (event.key == pygame.K_DOWN or event.key == pygame.K_s):
                     if piece.verif_pos("down") is True:
                         piece.actualise_pos("down")
+                        Var.TICKS = pygame.time.get_ticks() ###
                 elif (event.key == pygame.K_LEFT or event.key == pygame.K_q):
                     if piece.verif_pos("left") is True:
                         piece.actualise_pos("left")
                 elif (event.key == pygame.K_RIGHT or event.key == pygame.K_d):
                     if piece.verif_pos("right") is True:
                         piece.actualise_pos("right")
+                elif (event.key == pygame.K_SPACE):
+                    while piece.verif_pos("down") is True:
+                        piece.actualise_pos("down")
+                    Var.TICKS = pygame.time.get_ticks() - Var.VITESSE
 
             # if (event.key == pygame.K_SPACE or event.key == pygame.K_p) and Var.GAME_OVER == False:
             #     if Var.PAUSED == False:
@@ -292,20 +305,29 @@ while True:
             #         sys.exit()
 
 
-    if Var.GAME_OVER == False and Var.PAUSED == False:
-        if pygame.time.get_ticks() - tm > TIME_MOVE:
+    if Var.GAME_OVER == False:
+        ### Attend le moment d'actualiser la pièce
+        if pygame.time.get_ticks() - Var.TICKS > Var.VITESSE:
             if piece.verif_pos("down") is True:
                 piece.actualise_pos("down")
-                tm = pygame.time.get_ticks()
             else:
-                ### Trensforme la pièce dans un obstacle
+                ### Transforme la pièce dans un obstacle
                 for block in piece.liste_blocks[piece.rotation_actuelle]:
                     print("ACTUALISE GRILLE")
                     grille.matrice[block.x][block.y] = Block("obstacle", piece.couleur)
-                    grille.efface_lignes_completes()
+
+                ### Verifie et efface les lignes complètes
+                grille.efface_lignes_completes()
 
                 ### Spawn une nouvelle pièce
                 piece = Piece()
+                if piece.verif_pos() is True:
+                    piece.actualise_pos()
+                else:
+                    Var.GAME_OVER = True
+                    ### Écris "Game Over"
+
+            Var.TICKS = pygame.time.get_ticks()
 
     # if Var.PAUSED == True:
     #     message('Paused')
