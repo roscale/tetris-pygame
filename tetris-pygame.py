@@ -26,10 +26,12 @@ class Grille:
         self.matrice = [[ESPACE for i in range(y)] for j in range(x)]
         self.longueur = x
         self.largeur = y
+        self.lignes_par_lvl = 5
 
     def efface_lignes_completes(self):
         collone = 1
         ligne = self.largeur - 2
+        nbre_lignes_completes = 0
 
         while ligne >= 1:
             ### Vérifie si la ligne est complète
@@ -42,15 +44,30 @@ class Grille:
 
             if complete is True:
                 print("({}, {})".format(ligne, collone))
+                nbre_lignes_completes += 1
+                Var.LIGNES_TOTAL += 1
+
                 for ligne_c in range(ligne, 1, -1):
                     for collone_c in range(1, self.longueur - 1):
                         print(self.matrice[collone_c][ligne_c].type_block)
                         self.matrice[collone_c][ligne_c] = self.matrice[collone_c][ligne_c - 1]
-                Var.SCORE += 10
-                Var.VITESSE -= 10
             else:
                 ligne -= 1
-            #print("\n")
+
+        if nbre_lignes_completes == 1:
+            Var.SCORE += 40 * (Var.LVL + 1)
+        elif nbre_lignes_completes == 2:
+            Var.SCORE += 100 * (Var.LVL + 1)
+        elif nbre_lignes_completes == 3:
+            Var.SCORE += 300 * (Var.LVL + 1)
+        elif nbre_lignes_completes == 4:
+            Var.SCORE += 1200 * (Var.LVL + 1)
+
+
+        if Var.LIGNES_TOTAL >= self.lignes_par_lvl:
+            Var.VITESSE -= 25
+            Var.LVL += 1
+            self.lignes_par_lvl += 5
 
 
 class Piece:
@@ -174,19 +191,23 @@ def message(msg='', dim=32, pos=None):
     if pos is None:
         pos = FENETRE_LONG // 2, FENETRE_LARG // 2
     Var.fontObj = pygame.font.Font('freesansbold.ttf', dim)
-    Var.textSurfaceObj = Var.fontObj.render(msg, True, (255, 255, 255))
+    Var.textSurfaceObj = Var.fontObj.render(msg, True, BLANC)
     Var.textRectObj = Var.textSurfaceObj.get_rect()
     Var.textRectObj.center = pos
 
 def reset():
     global grille
     global piece
+    global piece_prochaine
     Var.GAME_OVER = False
     Var.VITESSE = 500
     Var.SCORE = 0
+    Var.LVL = 0
+    Var.LIGNES_TOTAL = 0
     grille = Grille(GRILLE_LONG, GRILLE_LARG)
     piece = Piece()
     piece.actualise_pos()
+    piece_prochaine = Piece()
     Var.TICKS = pygame.time.get_ticks()
 
 class Var:
@@ -195,16 +216,20 @@ class Var:
     FPS = 30
     GAME_OVER = False
     SCORE = 0
+    LVL = 0
+    LIGNES_TOTAL = 0
 
 GRILLE_LONG = 12 # blocks
 GRILLE_LARG = 23 # blocks
 BLOCK_DIM = 30 # px
-FENETRE_LONG = GRILLE_LONG * BLOCK_DIM# + 5 * BLOCK_DIM
-FENETRE_LARG = GRILLE_LARG * BLOCK_DIM + 2 * BLOCK_DIM# - 2 * BLOCK_DIM
+FENETRE_LONG = GRILLE_LONG * BLOCK_DIM + 6 * BLOCK_DIM
+FENETRE_LARG = GRILLE_LARG * BLOCK_DIM - 2 * BLOCK_DIM
 
 VERT = (0, 204, 0)
 NOIR = (0, 0, 0)
 BLANC = (255, 255, 255)
+GRIS = (175, 175, 175)
+DARK_RED = (150, 0, 0)
 BG = (100, 100, 100)
 
 CYAN = (0, 255, 255)
@@ -216,7 +241,7 @@ MAUVE = (128, 0, 128)
 ROUGE = (255, 0, 0)
 
 ESPACE = Block("espace", BG)
-MUR = Block("obstacle", ORANGE)
+MUR = Block("obstacle", GRIS)
 
 PIECE_I = [CYAN, Point((4, 1)), Point((5, 1)), Point((6, 1)), Point((7, 1)),
                  Point((5, -1)), Point((5, 0)), Point((5, 1)), Point((5, 2)),
@@ -259,13 +284,13 @@ PIECES = (PIECE_I, PIECE_J, PIECE_L, PIECE_O, PIECE_S, PIECE_T, PIECE_Z)
 pygame.init()
 FPSCLOCK = pygame.time.Clock()
 DISPLAYSURF = pygame.display.set_mode((FENETRE_LONG, FENETRE_LARG))
-pygame.key.set_repeat(200, 50)
+pygame.key.set_repeat(100, 40)
 
 grille = Grille(GRILLE_LONG, GRILLE_LARG)
 
 piece = Piece()
 piece_prochaine = Piece()
-piece_prochaine.bouge2pos(Point((0, GRILLE_LARG + 1)))
+piece_prochaine.bouge2pos(Point((9, 4)))
 
 # piece_prochaine.actualise_pos
 piece.actualise_pos()
@@ -285,6 +310,7 @@ while True:
                 elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
                     if piece.verif_pos("down") is True:
                         piece.actualise_pos("down")
+                        Var.SCORE += 1
                         Var.TICKS = pygame.time.get_ticks() ###
                 elif event.key == pygame.K_LEFT or event.key == pygame.K_q:
                     if piece.verif_pos("left") is True:
@@ -295,7 +321,7 @@ while True:
                 elif event.key == pygame.K_SPACE:
                     while piece.verif_pos("down") is True:
                         piece.actualise_pos("down")
-
+                        Var.SCORE += 2
                     Var.TICKS = pygame.time.get_ticks() - Var.VITESSE
 
             else:
@@ -323,9 +349,9 @@ while True:
                 ### Copie la piece prochaine et fais une nouvelle
                 piece = copy.deepcopy(piece_prochaine)
                 piece.deja_bouge = False
-                piece.bouge2pos(Point((0, -(GRILLE_LARG + 1))))
+                piece.bouge2pos(Point((-9, -4)))
                 piece_prochaine = Piece()
-                piece_prochaine.bouge2pos(Point((0, GRILLE_LARG + 1)))
+                piece_prochaine.bouge2pos(Point((9, 4)))
 
                 if piece.verif_pos() is True:
                     piece.actualise_pos()
@@ -335,12 +361,23 @@ while True:
             Var.TICKS = pygame.time.get_ticks()
 
     dessine_grille()
-    piece_prochaine.bouge2pos(Point((0, GRILLE_LARG + 1)))
+    piece_prochaine.bouge2pos(Point((9, 4)))
+
+    message('Score: {}'.format(Var.SCORE), 25, (blocks2pixels(15, 6)))
+    DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
+
+    message('Niveau: {}'.format(Var.LVL), 25, (blocks2pixels(15, 7)))
+    DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
+
+    message('Lignes: {}'.format(Var.LIGNES_TOTAL), 25, (blocks2pixels(15, 8)))
+    DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
+
 
     if Var.GAME_OVER is True:
+        pygame.draw.rect(DISPLAYSURF, DARK_RED, (0, FENETRE_LARG // 2 - 30, FENETRE_LONG, 90))
         message('Game Over')
         DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
-        message('(appuyez [r] pour recommencer ou [ESC] pour quitter)', 13, (FENETRE_LONG // 2, FENETRE_LARG // 2 + 30))
+        message('(appuyez [r] pour recommencer ou [ESC] pour quitter)', 18, (FENETRE_LONG // 2, FENETRE_LARG // 2 + 30))
         DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
 
     pygame.display.update()
