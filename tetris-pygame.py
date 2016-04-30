@@ -3,16 +3,16 @@
 # Rosca Alex 4TB
 # tetris-pygame.py – 21.04.16
 
-import pygame, sys, random
+import pygame,sys, random
 from pygame.locals import *
 import copy
 
 class Point:
-    def __init__(self, tup):
-        self.x = tup[0]
-        self.y = tup[1]
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
 
-    # Pour pouvoir comparer la position des bloques entre elles
+    # Pour pouvoir comparer la position des bloques entre eux
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
@@ -63,7 +63,6 @@ class Grille:
         elif nbre_lignes_completes == 4:
             Var.SCORE += 1200 * (Var.LVL + 1)
 
-
         if Var.LIGNES_TOTAL >= self.lignes_par_lvl:
             Var.VITESSE -= 25
             Var.LVL += 1
@@ -71,7 +70,7 @@ class Grille:
 
 
 class Piece:
-    directions = {"down":(0, +1), "left":(-1, 0), "right":(+1, 0), "meme":(0, 0)}
+    directions = {"1up":(0, -1), "2up":(0, -2), "1down":(0, +1), "2down":(0, +2), "1left":(-1, 0), "2left":(-2, 0), "1right":(+1, 0), "2right":(+2, 0), "meme":(0, 0)}
 
     def __init__(self, pos):
         piece_choisi = Piece.genere_piece_aleatoire(pos.x, pos.y)
@@ -87,22 +86,15 @@ class Piece:
         self.deja_bouge = False
 
     def genere_piece_aleatoire(x, y):
-        PIECE_I = [CYAN, Point((x+1, y+1)), Point((x, y+1)), Point((x+1, y+1)), Point((x+2, y+1)), Point((x+3, y+1))]
-
-        PIECE_J = [BLEU, Point((x+1, y+1)), Point((x, y)), Point((x, y+1)), Point((x+1, y+1)), Point((x+2, y+1))]
-
-        PIECE_L = [ORANGE, Point((x+1, y+1)), Point((x+2, y)), Point((x, y+1)), Point((x+1, y+1)), Point((x+2, y+1))]
-
-        PIECE_O = [JAUNE, Point((x+1, y)), Point((x+1, y)), Point((x+2, y)), Point((x+1, y+1)), Point((x+2, y+1))]
-
-        PIECE_S = [LIME, Point((x+1, y)), Point((x+1, y)), Point((x+2, y)), Point((x, y+1)), Point((x+1, y+1))]
-
-        PIECE_T = [MAUVE, Point((x+1, y+1)), Point((x+1, y)), Point((x, y+1)), Point((x+1, y+1)), Point((x+2, y+1))]
-
-        PIECE_Z = [ROUGE, Point((x+1, y)), Point((x, y)), Point((x+1, y)), Point((x+1, y+1)), Point((x+2, y+1))]
+        PIECE_I = [CYAN, Point(x+1, y+1), Point(x, y+1), Point(x+1, y+1), Point(x+2, y+1), Point(x+3, y+1)]
+        PIECE_J = [BLEU, Point(x+1, y+1), Point(x, y), Point(x, y+1), Point(x+1, y+1), Point(x+2, y+1)]
+        PIECE_L = [ORANGE, Point(x+1, y+1), Point(x+2, y), Point(x, y+1), Point(x+1, y+1), Point(x+2, y+1)]
+        PIECE_O = [JAUNE, Point(x+1, y+1), Point(x+1, y), Point(x+2, y), Point(x+1, y+1), Point(x+2, y+1)]
+        PIECE_S = [LIME, Point(x+1, y), Point(x+1, y), Point(x+2, y), Point(x, y+1), Point(x+1, y+1)]
+        PIECE_T = [MAUVE, Point(x+1, y+1), Point(x+1, y), Point(x, y+1), Point(x+1, y+1), Point(x+2, y+1)]
+        PIECE_Z = [ROUGE, Point(x+1, y), Point(x, y), Point(x+1, y), Point(x+1, y+1), Point(x+2, y+1)]
 
         PIECES = (PIECE_I, PIECE_J, PIECE_L, PIECE_O, PIECE_S, PIECE_T, PIECE_Z)
-
 
         liste_pieces = copy.deepcopy(PIECES)
         piece_choisi = random.choice(liste_pieces)
@@ -110,31 +102,26 @@ class Piece:
         return piece_choisi
 
     def verif_pos(self, direction="meme"):
-        if direction is not tuple:
-            direction = Point(Piece.directions[direction])
+        if not isinstance(direction, tuple):
+            direction = Point(*Piece.directions[direction])
 
-        ### Vérifie et modifie les coordonés ###
+        ### Vérifie les coordonés ###
         verif = True
         for block in self.liste_blocks:
-            # try:
-            # print(grille.matrice[block.x + direction.x][block.y + direction.y].type_block)
             print(block.x + direction.x)
             if grille.matrice[block.x + direction.x][block.y + direction.y].type_block == "obstacle":
-                # print("DA")
                 verif = False
                 break
 
         return verif
 
     def actualise_pos(self, direction="meme"):
-        if direction is not tuple:
-            direction = Point(Piece.directions[direction])
+        if not isinstance(direction, tuple):
+            direction = Point(*Piece.directions[direction])
 
         ### Efface ###
-        #print(self.liste_blocks[0])
         for block in self.liste_blocks:
             grille.matrice[block.x][block.y] = ESPACE
-            #print("EFFACE")
 
         ### Actualise les valeurs ###
         for block_pos in range(len(self.liste_blocks)):
@@ -146,9 +133,7 @@ class Piece:
 
         ### Actualise la grille ###
         for block in self.liste_blocks:
-            #print("ACTUALISE GRILLE")
             grille.matrice[block.x][block.y] = Block("block", self.couleur)
-
 
     def verif_tourne(self):
         verif = True
@@ -156,14 +141,14 @@ class Piece:
             x = block.x
             y = block.y
 
-            ### Prend les coordonées relatives au centre
+            # Calcule les coordonées relatives au centre
             x -= self.centre.x
             y -= self.centre.y
 
-            ### Tourne
+            # Tourne
             x, y = -y, x
 
-            ### Transforme dans des coordonées absolues
+            # Transforme dans des coordonées absolues
             x += self.centre.x
             y += self.centre.y
 
@@ -174,71 +159,69 @@ class Piece:
         return verif
 
     def tourne(self):
+        ### Efface ###
         for block in self.liste_blocks:
             grille.matrice[block.x][block.y] = ESPACE
-            #print("EFFACE")
-
 
         ### Actualise les valeurs ###
         for block_pos in range(len(self.liste_blocks)):
             x = self.liste_blocks[block_pos].x
             y = self.liste_blocks[block_pos].y
 
-            ### Prend les coordonées relatives au centre
+            # Calcule les coordonées relatives au centre
             x -= self.centre.x
             y -= self.centre.y
 
-            ### Tourne
+            # Tourne
             x, y = -y, x
 
-            ### Transforme dans des coordonées absolues
+            # Transforme dans des coordonées absolues
             x += self.centre.x
             y += self.centre.y
 
+            # Actualise les coordonées
             self.liste_blocks[block_pos].x = x
             self.liste_blocks[block_pos].y = y
 
-
         ### Actualise la grille ###
         for block in self.liste_blocks:
-            #print("ACTUALISE GRILLE")
-            print("({}, {})".format(block.x, block.y))
+            print("({}, {})".format(block.x, block.y)) # Debug
             grille.matrice[block.x][block.y] = Block("block", self.couleur)
-        print("********")
+        print("********") # Debug
 
-    def bouge2pos(self, pos):
-        if self.deja_bouge == False:
-            for block in self.liste_blocks:
-                block.x += pos.x
-                block.y += pos.y
-            self.deja_bouge = True
-
+    def move2pos_rel(self, pos):
+        ### Modifie la position d'une manière relative ###
         for block in self.liste_blocks:
-            x, y = blocks2pixels(block.x, block.y - 2)
-            pygame.draw.rect(DISPLAYSURF, self.couleur, (x, y, BLOCK_DIM, BLOCK_DIM))
-
-
+            block.x += pos.x
+            block.y += pos.y
+        self.centre.x += pos.x
+        self.centre.y += pos.y
 
 
 def blocks2pixels(x, y):
-    return (x * BLOCK_DIM), (y * BLOCK_DIM)
+    return x * BLOCK_DIM, y * BLOCK_DIM
 
-def dessine_grille():
+def dessine():
     ### Murs ###
     for block_y in range(GRILLE_LARG - 1):
         grille.matrice[0][block_y] = MUR
         grille.matrice[GRILLE_LONG - 1][block_y] = MUR
 
-    ### Sol
+    ### Sol ###
     for block_x in range(GRILLE_LONG):
         grille.matrice[block_x][block_y + 1] = MUR
 
-    ### Éléments du jeu ###
+    ### Pièces de la grille ###
     for block_x in range(GRILLE_LONG):
         for block_y in range(2, GRILLE_LARG):
             x, y = blocks2pixels(block_x, block_y - 2)
             if grille.matrice[block_x][block_y] != ESPACE:
                 pygame.draw.rect(DISPLAYSURF, grille.matrice[block_x][block_y].couleur, (x, y, BLOCK_DIM, BLOCK_DIM))
+
+    ### Pièce prochaine ###
+    for block in piece_prochaine.liste_blocks:
+        x, y = blocks2pixels(block.x, block.y - 2)
+        pygame.draw.rect(DISPLAYSURF, piece_prochaine.couleur, (x, y, BLOCK_DIM, BLOCK_DIM))
 
 def message(msg='', dim=32, pos=None):
     if pos is None:
@@ -258,9 +241,9 @@ def reset():
     Var.LVL = 0
     Var.LIGNES_TOTAL = 0
     grille = Grille(GRILLE_LONG, GRILLE_LARG)
-    piece = Piece()
+    piece = Piece(Point(4, 0))
     piece.actualise_pos()
-    piece_prochaine = Piece()
+    piece_prochaine = Piece(Point(13, 4))
     Var.TICKS = pygame.time.get_ticks()
 
 class Var:
@@ -305,11 +288,11 @@ pygame.key.set_repeat(100, 40)
 
 grille = Grille(GRILLE_LONG, GRILLE_LARG)
 
-piece = Piece(Point((4, 0)))
-piece_prochaine = Piece(Point((4, 0)))
-piece_prochaine.bouge2pos(Point((9, 4)))
+piece = Piece(Point(4, 0))
+# piece_prochaine = Piece(Point((4, 0)))
+piece_prochaine = Piece(Point(13, 4))
 
-# piece_prochaine.actualise_pos
+# piece_prochaine.actualise_pos()
 piece.actualise_pos()
 
 
@@ -325,20 +308,36 @@ while True:
                 if event.key == pygame.K_UP or event.key == pygame.K_z:
                     if piece.verif_tourne() is True:
                         piece.tourne()
+                    else:
+                        sort = False
+                        for kick_pos, kick_pos_inv in zip(("up", "left", "right"), ("down", "right", "left")):
+                            for fois in ("1", "2"):
+                                if piece.verif_pos(fois + kick_pos):
+                                    piece.actualise_pos(fois + kick_pos)
+                                    if piece.verif_tourne() is True:
+                                        piece.tourne()
+                                        sort = True
+                                        break
+                                    else:
+                                        piece.actualise_pos(fois + kick_pos_inv)
+                            if sort == True:
+                                break
+
+
                 elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
-                    if piece.verif_pos("down") is True:
-                        piece.actualise_pos("down")
+                    if piece.verif_pos("1down") is True:
+                        piece.actualise_pos("1down")
                         Var.SCORE += 1
                         Var.TICKS = pygame.time.get_ticks() ###
                 elif event.key == pygame.K_LEFT or event.key == pygame.K_q:
-                    if piece.verif_pos("left") is True:
-                        piece.actualise_pos("left")
+                    if piece.verif_pos("1left") is True:
+                        piece.actualise_pos("1left")
                 elif event.key == pygame.K_RIGHT or event.key == pygame.K_d:
-                    if piece.verif_pos("right") is True:
-                        piece.actualise_pos("right")
+                    if piece.verif_pos("1right") is True:
+                        piece.actualise_pos("1right")
                 elif event.key == pygame.K_SPACE:
-                    while piece.verif_pos("down") is True:
-                        piece.actualise_pos("down")
+                    while piece.verif_pos("1down") is True:
+                        piece.actualise_pos("1down")
                         Var.SCORE += 2
                     Var.TICKS = pygame.time.get_ticks() - Var.VITESSE
 
@@ -353,8 +352,8 @@ while True:
         pygame.display.set_caption('Tetris - Score: {}'.format(Var.SCORE))
         ### Attend le moment d'actualiser la pièce
         if pygame.time.get_ticks() - Var.TICKS > Var.VITESSE:
-            if piece.verif_pos("down") is True:
-                piece.actualise_pos("down")
+            if piece.verif_pos("1down") is True:
+                piece.actualise_pos("1down")
             else:
                 ### Transforme la pièce dans un obstacle
                 for block in piece.liste_blocks:
@@ -366,10 +365,10 @@ while True:
 
                 ### Copie la piece prochaine et fais une nouvelle
                 piece = copy.deepcopy(piece_prochaine)
-                piece.deja_bouge = False
-                piece.bouge2pos(Point((-9, -4)))
-                piece_prochaine = Piece(Point((4, 0)))
-                piece_prochaine.bouge2pos(Point((9, 4)))
+                # piece.deja_bouge = False
+                piece.move2pos_rel(Point(-9, -4))
+                # piece_prochaine = Piece(Point((4, 0)))
+                piece_prochaine = Piece(Point(13, 4))
 
                 if piece.verif_pos() is True:
                     piece.actualise_pos()
@@ -378,8 +377,8 @@ while True:
 
             Var.TICKS = pygame.time.get_ticks()
 
-    dessine_grille()
-    piece_prochaine.bouge2pos(Point((9, 4)))
+    dessine()
+    # piece_prochaine.move2pos_rel(Point((9, 4)))
 
     message('Score: {}'.format(Var.SCORE), 25, (blocks2pixels(15, 6)))
     DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
