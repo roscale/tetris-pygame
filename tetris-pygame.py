@@ -6,6 +6,7 @@
 import pygame,sys, random
 from pygame.locals import *
 import copy
+import pygame.gfxdraw
 
 class Point:
     def __init__(self, x, y):
@@ -213,12 +214,12 @@ def dessine():
         for block_y in range(2, GRILLE_LARG):
             x, y = blocks2pixels(block_x, block_y - 2)
             if grille.matrice[block_x][block_y] != ESPACE:
-                pygame.draw.rect(DISPLAYSURF, grille.matrice[block_x][block_y].couleur, (x, y, BLOCK_DIM, BLOCK_DIM))
+                pygame.gfxdraw.box(DISPLAYSURF, (x, y, BLOCK_DIM, BLOCK_DIM), (*grille.matrice[block_x][block_y].couleur, 255))
 
     ### Pièce prochaine ###
     for block in piece_prochaine.liste_blocks:
         x, y = blocks2pixels(block.x, block.y - 2)
-        pygame.draw.rect(DISPLAYSURF, piece_prochaine.couleur, (x, y, BLOCK_DIM, BLOCK_DIM))
+        pygame.gfxdraw.box(DISPLAYSURF, (x, y, BLOCK_DIM, BLOCK_DIM), (*piece_prochaine.couleur, 255))
 
 def message(msg, dim, pos):
     Var.fontObj = pygame.font.Font('freesansbold.ttf', int(dim))
@@ -381,7 +382,7 @@ while True:
     DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
 
     if Var.GAME_OVER is True:
-        pygame.draw.rect(DISPLAYSURF, ROUGE_FONCE, (0, FENETRE_LARG // 2 - BLOCK_DIM, FENETRE_LONG, BLOCK_DIM * 3))
+        pygame.gfxdraw.box(DISPLAYSURF, (0, FENETRE_LARG // 2 - BLOCK_DIM, FENETRE_LONG, BLOCK_DIM * 3), (*ROUGE_FONCE, 200))
         message('Game Over', BLOCK_DIM + 2, (FENETRE_LONG // 2, FENETRE_LARG // 2))
         DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
         message('(appuyez [r] pour recommencer ou [ESC] pour quitter)', BLOCK_DIM * 0.6, (FENETRE_LONG // 2, FENETRE_LARG // 2 + BLOCK_DIM))
