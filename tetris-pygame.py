@@ -121,7 +121,6 @@ class Piece:
         self.centre.x += direction.x
         self.centre.y += direction.y
 
-
         ### Actualise la grille ###
         for block in self.liste_blocks:
             grille.matrice[block.x][block.y] = Block("block", self.couleur)
@@ -192,6 +191,8 @@ class Piece:
         self.centre.y += y
 
 
+
+
 def blocks2pixels(x, y):
     return x * BLOCK_DIM, y * BLOCK_DIM
 
@@ -254,6 +255,8 @@ GRILLE_LARG = 23 # blocks
 BLOCK_DIM = 30 # px
 FENETRE_LONG = GRILLE_LONG * BLOCK_DIM + 6 * BLOCK_DIM
 FENETRE_LARG = GRILLE_LARG * BLOCK_DIM - 2 * BLOCK_DIM
+PIECE_SPAWN_POS = (GRILLE_LONG // 2 - 1, 1)
+PIECE_PROCHAINE_SPAWN_POS = (GRILLE_LONG + 2, 5)
 
 VERT = (0, 204, 0)
 NOIR = (0, 0, 0)
@@ -281,8 +284,8 @@ pygame.key.set_repeat(100, 40)
 
 grille = Grille(GRILLE_LONG, GRILLE_LARG)
 
-piece = Piece(Point(5, 1))
-piece_prochaine = Piece(Point(14, 5))
+piece = Piece(Point(*PIECE_SPAWN_POS))
+piece_prochaine = Piece(Point(*PIECE_PROCHAINE_SPAWN_POS))
 piece.actualise_pos()
 
 while True:
@@ -355,8 +358,8 @@ while True:
 
                 ### Copie la piece prochaine et fais une nouvelle
                 piece = copy.deepcopy(piece_prochaine)
-                piece.move2pos(Point(5, 1))
-                piece_prochaine = Piece(Point(14, 5))
+                piece.move2pos(Point(GRILLE_LONG // 2 - 1, 1))
+                piece_prochaine = Piece(Point(GRILLE_LONG + 2, 5))
 
                 ### Verifie si la position de départ est valide, sinon tout est rempli -> Game Over
                 if piece.verif_pos() is True:
