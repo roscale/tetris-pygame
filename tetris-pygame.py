@@ -37,10 +37,8 @@ class Grille:
             ### Vérifie si la ligne est complète
             complete = True
             for collone in range(1, self.longueur - 1):
-                #print(self.matrice[collone][ligne].type_block)
                 if self.matrice[collone][ligne].type_block != "obstacle":
                     complete = False
-                    #print("({}, {})".format(ligne, collone))
 
             if complete is True:
                 print("({}, {})".format(ligne, collone))
@@ -49,7 +47,7 @@ class Grille:
 
                 for ligne_c in range(ligne, 1, -1):
                     for collone_c in range(1, self.longueur - 1):
-                        print(self.matrice[collone_c][ligne_c].type_block)
+                        # Remplace le bloque actuel avec le block au dessous
                         self.matrice[collone_c][ligne_c] = self.matrice[collone_c][ligne_c - 1]
             else:
                 ligne -= 1
@@ -75,24 +73,18 @@ class Piece:
     def __init__(self, pos):
         piece_choisi = Piece.genere_piece_aleatoire(pos.x, pos.y)
 
-        self.rotation = 0
-        self.rotation_actuelle = 0
-
         self.couleur = piece_choisi[0]
         self.centre = piece_choisi[1]
         self.liste_blocks = piece_choisi[2:6]
 
-        #print(PIECES[0])
-        self.deja_bouge = False
-
     def genere_piece_aleatoire(x, y):
-        PIECE_I = [CYAN, Point(x+1, y+1), Point(x, y+1), Point(x+1, y+1), Point(x+2, y+1), Point(x+3, y+1)]
-        PIECE_J = [BLEU, Point(x+1, y+1), Point(x, y), Point(x, y+1), Point(x+1, y+1), Point(x+2, y+1)]
-        PIECE_L = [ORANGE, Point(x+1, y+1), Point(x+2, y), Point(x, y+1), Point(x+1, y+1), Point(x+2, y+1)]
-        PIECE_O = [JAUNE, Point(x+1, y+1), Point(x+1, y), Point(x+2, y), Point(x+1, y+1), Point(x+2, y+1)]
-        PIECE_S = [LIME, Point(x+1, y), Point(x+1, y), Point(x+2, y), Point(x, y+1), Point(x+1, y+1)]
-        PIECE_T = [MAUVE, Point(x+1, y+1), Point(x+1, y), Point(x, y+1), Point(x+1, y+1), Point(x+2, y+1)]
-        PIECE_Z = [ROUGE, Point(x+1, y), Point(x, y), Point(x+1, y), Point(x+1, y+1), Point(x+2, y+1)]
+        PIECE_I = [CYAN, Point(x, y), Point(x-1, y), Point(x, y), Point(x+1, y), Point(x+2, y)]
+        PIECE_J = [BLEU, Point(x, y), Point(x-1, y-1), Point(x-1, y), Point(x, y), Point(x+1, y)]
+        PIECE_L = [ORANGE, Point(x, y), Point(x+1, y-1), Point(x-1, y), Point(x, y), Point(x+1, y)]
+        PIECE_O = [JAUNE, Point(x, y), Point(x, y-1), Point(x+1, y-1), Point(x, y), Point(x+1, y)]
+        PIECE_S = [LIME, Point(x, y), Point(x, y-1), Point(x+1, y-1), Point(x-1, y), Point(x, y)]
+        PIECE_T = [MAUVE, Point(x, y), Point(x, y-1), Point(x-1, y), Point(x, y), Point(x+1, y)]
+        PIECE_Z = [ROUGE, Point(x, y), Point(x-1, y-1), Point(x, y-1), Point(x, y), Point(x+1, y)]
 
         PIECES = (PIECE_I, PIECE_J, PIECE_L, PIECE_O, PIECE_S, PIECE_T, PIECE_Z)
 
@@ -108,7 +100,6 @@ class Piece:
         ### Vérifie les coordonés ###
         verif = True
         for block in self.liste_blocks:
-            print(block.x + direction.x)
             if grille.matrice[block.x + direction.x][block.y + direction.y].type_block == "obstacle":
                 verif = False
                 break
@@ -189,13 +180,16 @@ class Piece:
             grille.matrice[block.x][block.y] = Block("block", self.couleur)
         print("********") # Debug
 
-    def move2pos_rel(self, pos):
-        ### Modifie la position d'une manière relative ###
+    def move2pos(self, pos):
+        x = pos.x - self.centre.x
+        y = pos.y - self.centre.y
+
         for block in self.liste_blocks:
-            block.x += pos.x
-            block.y += pos.y
-        self.centre.x += pos.x
-        self.centre.y += pos.y
+            block.x += x
+            block.y += y
+
+        self.centre.x += x
+        self.centre.y += y
 
 
 def blocks2pixels(x, y):
@@ -241,9 +235,9 @@ def reset():
     Var.LVL = 0
     Var.LIGNES_TOTAL = 0
     grille = Grille(GRILLE_LONG, GRILLE_LARG)
-    piece = Piece(Point(4, 0))
+    piece = Piece(Point(5, 1))
     piece.actualise_pos()
-    piece_prochaine = Piece(Point(13, 4))
+    piece_prochaine = Piece(Point(14, 5))
     Var.TICKS = pygame.time.get_ticks()
 
 class Var:
@@ -280,7 +274,6 @@ ESPACE = Block("espace", BG)
 MUR = Block("obstacle", GRIS)
 
 
-
 pygame.init()
 FPSCLOCK = pygame.time.Clock()
 DISPLAYSURF = pygame.display.set_mode((FENETRE_LONG, FENETRE_LARG))
@@ -288,13 +281,9 @@ pygame.key.set_repeat(100, 40)
 
 grille = Grille(GRILLE_LONG, GRILLE_LARG)
 
-piece = Piece(Point(4, 0))
-# piece_prochaine = Piece(Point((4, 0)))
-piece_prochaine = Piece(Point(13, 4))
-
-# piece_prochaine.actualise_pos()
+piece = Piece(Point(5, 1))
+piece_prochaine = Piece(Point(14, 5))
 piece.actualise_pos()
-
 
 while True:
     DISPLAYSURF.fill(BG)
@@ -309,6 +298,7 @@ while True:
                     if piece.verif_tourne() is True:
                         piece.tourne()
                     else:
+                        ### Fais un wall-kick
                         sort = False
                         for kick_pos, kick_pos_inv in zip(("up", "left", "right"), ("down", "right", "left")):
                             for fois in ("1", "2"):
@@ -319,16 +309,16 @@ while True:
                                         sort = True
                                         break
                                     else:
+                                        # Si ça échoue, mets la pièce ou elle était avant
                                         piece.actualise_pos(fois + kick_pos_inv)
-                            if sort == True:
+                            if sort is True:
                                 break
-
 
                 elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
                     if piece.verif_pos("1down") is True:
                         piece.actualise_pos("1down")
                         Var.SCORE += 1
-                        Var.TICKS = pygame.time.get_ticks() ###
+                        Var.TICKS = pygame.time.get_ticks()
                 elif event.key == pygame.K_LEFT or event.key == pygame.K_q:
                     if piece.verif_pos("1left") is True:
                         piece.actualise_pos("1left")
@@ -350,6 +340,7 @@ while True:
 
     if Var.GAME_OVER is False:
         pygame.display.set_caption('Tetris - Score: {}'.format(Var.SCORE))
+
         ### Attend le moment d'actualiser la pièce
         if pygame.time.get_ticks() - Var.TICKS > Var.VITESSE:
             if piece.verif_pos("1down") is True:
@@ -357,7 +348,6 @@ while True:
             else:
                 ### Transforme la pièce dans un obstacle
                 for block in piece.liste_blocks:
-                    print("ACTUALISE GRILLE")
                     grille.matrice[block.x][block.y] = Block("obstacle", piece.couleur)
 
                 ### Verifie et efface les lignes complètes
@@ -365,20 +355,19 @@ while True:
 
                 ### Copie la piece prochaine et fais une nouvelle
                 piece = copy.deepcopy(piece_prochaine)
-                # piece.deja_bouge = False
-                piece.move2pos_rel(Point(-9, -4))
-                # piece_prochaine = Piece(Point((4, 0)))
-                piece_prochaine = Piece(Point(13, 4))
+                piece.move2pos(Point(5, 1))
+                piece_prochaine = Piece(Point(14, 5))
 
+                ### Verifie si la position de départ est valide, sinon tout est rempli -> Game Over
                 if piece.verif_pos() is True:
                     piece.actualise_pos()
                 else:
                     Var.GAME_OVER = True
 
+            ### Reset le timer
             Var.TICKS = pygame.time.get_ticks()
 
     dessine()
-    # piece_prochaine.move2pos_rel(Point((9, 4)))
 
     message('Score: {}'.format(Var.SCORE), 25, (blocks2pixels(15, 6)))
     DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
@@ -388,7 +377,6 @@ while True:
 
     message('Lignes: {}'.format(Var.LIGNES_TOTAL), 25, (blocks2pixels(15, 8)))
     DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
-
 
     if Var.GAME_OVER is True:
         pygame.draw.rect(DISPLAYSURF, DARK_RED, (0, FENETRE_LARG // 2 - 30, FENETRE_LONG, 90))
