@@ -3,7 +3,7 @@
 # Rosca Alex 4TB
 # tetris-pygame.py – 21.04.16
 
-import pygame,sys, random
+import pygame, sys, random
 from pygame.locals import *
 import copy
 import pygame.gfxdraw
@@ -33,25 +33,37 @@ class Grille:
         collone = 1
         ligne = self.largeur - 2
         nbre_lignes_completes = 0
+        lignes_completes = []
 
-        while ligne >= 1:
-            ### Vérifie si la ligne est complète
+        ### Vérifie si la ligne est complète
+        for ligne in range(self.largeur - 2, 0, -1):
             complete = True
             for collone in range(1, self.longueur - 1):
                 if self.matrice[collone][ligne].type_block != "obstacle":
                     complete = False
 
             if complete is True:
-                print("({}, {})".format(ligne, collone))
+                print("Effacé: ({}, {})\n********".format(ligne, collone)) # Debug
                 nbre_lignes_completes += 1
+                lignes_completes.append(ligne)
                 Var.LIGNES_TOTAL += 1
 
-                for ligne_c in range(ligne, 1, -1):
-                    for collone_c in range(1, self.longueur - 1):
-                        # Remplace le bloque actuel avec le block au dessous
-                        self.matrice[collone_c][ligne_c] = self.matrice[collone_c][ligne_c - 1]
-            else:
-                ligne -= 1
+        ### Si il y a des lignes complètes, fais l'animation
+        if lignes_completes:
+            self.efface_ligne_animation(lignes_completes)
+
+        ### Efface les lignes complètes
+        while lignes_completes:
+            ligne = lignes_completes[0]
+            for ligne_courrente in range(ligne, 1, -1):
+                for collone_courrente in range(1, self.longueur - 1):
+                    # Remplace le bloque actuel avec le block au dessous
+                    self.matrice[collone_courrente][ligne_courrente] = self.matrice[collone_courrente][ligne_courrente - 1]
+
+            lignes_completes.remove(ligne)
+            for elem in range(len(lignes_completes)):
+                lignes_completes[elem] += 1
+
 
         ### Augumente le score
         if nbre_lignes_completes == 1:
@@ -68,6 +80,32 @@ class Grille:
             Var.VITESSE -= 25
             Var.LVL += 1
             self.lignes_par_lvl += 5
+
+    def efface_ligne_animation(self, lignes_completes):
+        ### Actualise l'écran pour l'avoir à jour
+        dessine()
+        pygame.display.update()
+
+        ### Commence l'animation
+        liste_rect_update = []
+        for transparence in range(0, 250, 10):
+            for ligne in lignes_completes:
+                for collone_courrente in range(1, self.longueur - 1):
+                    # Dessine juste les bloques qui doivent être animé
+                    pygame.gfxdraw.box(DISPLAYSURF, (*blocks2pixels(collone_courrente, ligne), BLOCK_DIM, BLOCK_DIM),  (*self.matrice[collone_courrente][ligne].couleur, 255))
+
+                # Crée un rectangle d'une ligne
+                rectangle = pygame.Rect(BLOCK_DIM, (ligne - 2) * BLOCK_DIM, BLOCK_DIM * 10, BLOCK_DIM)
+                # Ajoute-le dans la liste pour actualiser juste cette partie(+ rapide que d'actualiser tout l'écran)
+                liste_rect_update.append(rectangle)
+                # Applique l'éffet sur la ligne
+                pygame.gfxdraw.box(DISPLAYSURF, rectangle, (*BLANC, transparence))
+
+            pygame.time.delay(15) # 15
+            # Actualise l'écran dans les zones de rectangles
+            pygame.display.update(liste_rect_update)
+            # Vider la liste pour qu'elle se regénère
+            liste_rect_update = []
 
 
 class Piece:
@@ -197,7 +235,8 @@ class Piece:
 
 
 def blocks2pixels(x, y):
-    return x * BLOCK_DIM, y * BLOCK_DIM
+    # y-2 parcequ'il y a 2 lignes caché en haut(spawn zone), donc (0, 0) commence à la ligne 2
+    return x * BLOCK_DIM, (y - 2) * BLOCK_DIM
 
 def dessine():
     ### Murs ###
@@ -212,14 +251,24 @@ def dessine():
     ### Pièces de la grille ###
     for block_x in range(GRILLE_LONG):
         for block_y in range(2, GRILLE_LARG):
-            x, y = blocks2pixels(block_x, block_y - 2)
+            x, y = blocks2pixels(block_x, block_y)
             if grille.matrice[block_x][block_y] != ESPACE:
                 pygame.gfxdraw.box(DISPLAYSURF, (x, y, BLOCK_DIM, BLOCK_DIM), (*grille.matrice[block_x][block_y].couleur, 255))
 
     ### Pièce prochaine ###
     for block in piece_prochaine.liste_blocks:
-        x, y = blocks2pixels(block.x, block.y - 2)
+        x, y = blocks2pixels(block.x, block.y)
         pygame.gfxdraw.box(DISPLAYSURF, (x, y, BLOCK_DIM, BLOCK_DIM), (*piece_prochaine.couleur, 255))
+
+    ### Stats ###
+    message('Score: {}'.format(Var.SCORE), STATS_TEXT_DIM, (blocks2pixels(GRILLE_LONG + 3, 8)))
+    DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
+
+    message('Niveau: {}'.format(Var.LVL), STATS_TEXT_DIM, (blocks2pixels(GRILLE_LONG + 3, 9)))
+    DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
+
+    message('Lignes: {}'.format(Var.LIGNES_TOTAL), STATS_TEXT_DIM, (blocks2pixels(GRILLE_LONG + 3, 10)))
+    DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
 
 def message(msg, dim, pos):
     Var.fontObj = pygame.font.Font('freesansbold.ttf', int(dim))
@@ -334,6 +383,7 @@ while True:
                         Var.SCORE += 2
                     Var.TICKS = pygame.time.get_ticks() - Var.VITESSE
 
+
             else:
                 if event.key == pygame.K_r:
                     reset()
@@ -371,15 +421,6 @@ while True:
             Var.TICKS = pygame.time.get_ticks()
 
     dessine()
-
-    message('Score: {}'.format(Var.SCORE), STATS_TEXT_DIM, (blocks2pixels(GRILLE_LONG + 3, 6)))
-    DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
-
-    message('Niveau: {}'.format(Var.LVL), STATS_TEXT_DIM, (blocks2pixels(GRILLE_LONG + 3, 7)))
-    DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
-
-    message('Lignes: {}'.format(Var.LIGNES_TOTAL), STATS_TEXT_DIM, (blocks2pixels(GRILLE_LONG + 3, 8)))
-    DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
 
     if Var.GAME_OVER is True:
         pygame.gfxdraw.box(DISPLAYSURF, (0, FENETRE_LARG // 2 - BLOCK_DIM, FENETRE_LONG, BLOCK_DIM * 3), (*ROUGE_FONCE, 200))
