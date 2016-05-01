@@ -52,6 +52,7 @@ class Grille:
             else:
                 ligne -= 1
 
+        ### Augumente le score
         if nbre_lignes_completes == 1:
             Var.SCORE += 40 * (Var.LVL + 1)
         elif nbre_lignes_completes == 2:
@@ -61,6 +62,7 @@ class Grille:
         elif nbre_lignes_completes == 4:
             Var.SCORE += 1200 * (Var.LVL + 1)
 
+        ### Augumente le niveau à chaque 5eme ligne complete
         if Var.LIGNES_TOTAL >= self.lignes_par_lvl:
             Var.VITESSE -= 25
             Var.LVL += 1
@@ -218,10 +220,8 @@ def dessine():
         x, y = blocks2pixels(block.x, block.y - 2)
         pygame.draw.rect(DISPLAYSURF, piece_prochaine.couleur, (x, y, BLOCK_DIM, BLOCK_DIM))
 
-def message(msg='', dim=32, pos=None):
-    if pos is None:
-        pos = FENETRE_LONG // 2, FENETRE_LARG // 2
-    Var.fontObj = pygame.font.Font('freesansbold.ttf', dim)
+def message(msg, dim, pos):
+    Var.fontObj = pygame.font.Font('freesansbold.ttf', int(dim))
     Var.textSurfaceObj = Var.fontObj.render(msg, True, BLANC)
     Var.textRectObj = Var.textSurfaceObj.get_rect()
     Var.textRectObj.center = pos
@@ -236,9 +236,9 @@ def reset():
     Var.LVL = 0
     Var.LIGNES_TOTAL = 0
     grille = Grille(GRILLE_LONG, GRILLE_LARG)
-    piece = Piece(Point(5, 1))
+    piece = Piece(Point(*PIECE_SPAWN_POS))
     piece.actualise_pos()
-    piece_prochaine = Piece(Point(14, 5))
+    piece_prochaine = Piece(Point(*PIECE_PROCHAINE_SPAWN_POS))
     Var.TICKS = pygame.time.get_ticks()
 
 class Var:
@@ -257,12 +257,11 @@ FENETRE_LONG = GRILLE_LONG * BLOCK_DIM + 6 * BLOCK_DIM
 FENETRE_LARG = GRILLE_LARG * BLOCK_DIM - 2 * BLOCK_DIM
 PIECE_SPAWN_POS = (GRILLE_LONG // 2 - 1, 1)
 PIECE_PROCHAINE_SPAWN_POS = (GRILLE_LONG + 2, 5)
+STATS_TEXT_DIM = BLOCK_DIM * 0.9
 
-VERT = (0, 204, 0)
-NOIR = (0, 0, 0)
 BLANC = (255, 255, 255)
 GRIS = (175, 175, 175)
-DARK_RED = (150, 0, 0)
+ROUGE_FONCE = (150, 0, 0)
 BG = (100, 100, 100)
 
 CYAN = (0, 255, 255)
@@ -372,20 +371,20 @@ while True:
 
     dessine()
 
-    message('Score: {}'.format(Var.SCORE), 25, (blocks2pixels(15, 6)))
+    message('Score: {}'.format(Var.SCORE), STATS_TEXT_DIM, (blocks2pixels(GRILLE_LONG + 3, 6)))
     DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
 
-    message('Niveau: {}'.format(Var.LVL), 25, (blocks2pixels(15, 7)))
+    message('Niveau: {}'.format(Var.LVL), STATS_TEXT_DIM, (blocks2pixels(GRILLE_LONG + 3, 7)))
     DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
 
-    message('Lignes: {}'.format(Var.LIGNES_TOTAL), 25, (blocks2pixels(15, 8)))
+    message('Lignes: {}'.format(Var.LIGNES_TOTAL), STATS_TEXT_DIM, (blocks2pixels(GRILLE_LONG + 3, 8)))
     DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
 
     if Var.GAME_OVER is True:
-        pygame.draw.rect(DISPLAYSURF, DARK_RED, (0, FENETRE_LARG // 2 - 30, FENETRE_LONG, 90))
-        message('Game Over')
+        pygame.draw.rect(DISPLAYSURF, ROUGE_FONCE, (0, FENETRE_LARG // 2 - BLOCK_DIM, FENETRE_LONG, BLOCK_DIM * 3))
+        message('Game Over', BLOCK_DIM + 2, (FENETRE_LONG // 2, FENETRE_LARG // 2))
         DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
-        message('(appuyez [r] pour recommencer ou [ESC] pour quitter)', 18, (FENETRE_LONG // 2, FENETRE_LARG // 2 + 30))
+        message('(appuyez [r] pour recommencer ou [ESC] pour quitter)', BLOCK_DIM * 0.6, (FENETRE_LONG // 2, FENETRE_LARG // 2 + BLOCK_DIM))
         DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
 
     pygame.display.update()
