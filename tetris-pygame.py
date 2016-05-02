@@ -48,23 +48,6 @@ class Grille:
                 lignes_completes.append(ligne)
                 Var.LIGNES_TOTAL += 1
 
-        ### Si il y a des lignes complètes, fais l'animation
-        if lignes_completes:
-            self.efface_ligne_animation(lignes_completes)
-
-        ### Efface les lignes complètes
-        while lignes_completes:
-            ligne = lignes_completes[0]
-            for ligne_courrente in range(ligne, 1, -1):
-                for collone_courrente in range(1, self.longueur - 1):
-                    # Remplace le bloque actuel avec le block au dessous
-                    self.matrice[collone_courrente][ligne_courrente] = self.matrice[collone_courrente][ligne_courrente - 1]
-
-            lignes_completes.remove(ligne)
-            for elem in range(len(lignes_completes)):
-                lignes_completes[elem] += 1
-
-
         ### Augumente le score
         if nbre_lignes_completes == 1:
             Var.SCORE += 40 * (Var.LVL + 1)
@@ -81,13 +64,38 @@ class Grille:
             Var.LVL += 1
             self.lignes_par_lvl += 5
 
-    def efface_ligne_animation(self, lignes_completes):
+        ### Si il y a des lignes complètes, fais l'animation
+        if lignes_completes:
+            self.efface_ligne_animation(lignes_completes, nbre_lignes_completes)
+
+        ### Efface les lignes complètes
+        while lignes_completes:
+            ligne = lignes_completes[0]
+            for ligne_courrente in range(ligne, 1, -1):
+                for collone_courrente in range(1, self.longueur - 1):
+                    # Remplace le bloque actuel avec le block au dessous
+                    self.matrice[collone_courrente][ligne_courrente] = self.matrice[collone_courrente][ligne_courrente - 1]
+
+            lignes_completes.remove(ligne)
+            for elem in range(len(lignes_completes)):
+                lignes_completes[elem] += 1
+
+    def efface_ligne_animation(self, lignes_completes, nbre_lignes_completes):
         ### Actualise l'écran pour l'avoir à jour
         dessine()
         pygame.display.update()
 
+        # if nbre_lignes_completes == 1:
+        #     message("TEST", 40, MILIEU_GRILLE)
+        if nbre_lignes_completes == 2:
+            message("DOUBLE", 34, MILIEU_GRILLE)
+        elif nbre_lignes_completes == 3:
+            message("TRIPLE", 37, MILIEU_GRILLE)
+        elif nbre_lignes_completes == 4:
+            message("TETRIS", 40, MILIEU_GRILLE)
+
         ### Commence l'animation
-        liste_rect_update = []
+        dirty_update_list = []
         for transparence in range(0, 250, 10):
             for ligne in lignes_completes:
                 for collone_courrente in range(1, self.longueur - 1):
@@ -95,17 +103,17 @@ class Grille:
                     pygame.gfxdraw.box(DISPLAYSURF, (*blocks2pixels(collone_courrente, ligne), BLOCK_DIM, BLOCK_DIM),  (*self.matrice[collone_courrente][ligne].couleur, 255))
 
                 # Crée un rectangle d'une ligne
-                rectangle = pygame.Rect(BLOCK_DIM, (ligne - 2) * BLOCK_DIM, BLOCK_DIM * 10, BLOCK_DIM)
+                rect = pygame.Rect(BLOCK_DIM, (ligne - 2) * BLOCK_DIM, BLOCK_DIM * 10, BLOCK_DIM)
                 # Ajoute-le dans la liste pour actualiser juste cette partie(+ rapide que d'actualiser tout l'écran)
-                liste_rect_update.append(rectangle)
+                dirty_update_list.append(rect)
                 # Applique l'éffet sur la ligne
-                pygame.gfxdraw.box(DISPLAYSURF, rectangle, (*BLANC, transparence))
+                pygame.gfxdraw.box(DISPLAYSURF, rect, (*BLANC, transparence))
 
             pygame.time.delay(15) # 15
             # Actualise l'écran dans les zones de rectangles
-            pygame.display.update(liste_rect_update)
+            pygame.display.update(dirty_update_list)
             # Vider la liste pour qu'elle se regénère
-            liste_rect_update = []
+            dirty_update_list = []
 
 
 class Piece:
@@ -262,19 +270,16 @@ def dessine():
 
     ### Stats ###
     message('Score: {}'.format(Var.SCORE), STATS_TEXT_DIM, (blocks2pixels(GRILLE_LONG + 3, 8)))
-    DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
-
     message('Niveau: {}'.format(Var.LVL), STATS_TEXT_DIM, (blocks2pixels(GRILLE_LONG + 3, 9)))
-    DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
-
     message('Lignes: {}'.format(Var.LIGNES_TOTAL), STATS_TEXT_DIM, (blocks2pixels(GRILLE_LONG + 3, 10)))
-    DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
 
 def message(msg, dim, pos):
-    Var.fontObj = pygame.font.Font('freesansbold.ttf', int(dim))
-    Var.textSurfaceObj = Var.fontObj.render(msg, True, BLANC)
-    Var.textRectObj = Var.textSurfaceObj.get_rect()
-    Var.textRectObj.center = pos
+    fontObj = pygame.font.Font('freesansbold.ttf', int(dim))
+    textSurfaceObj = fontObj.render(msg, True, BLANC)
+    textRectObj = textSurfaceObj.get_rect()
+    textRectObj.center = pos
+    DISPLAYSURF.blit(textSurfaceObj, textRectObj)
+    pygame.display.update(textRectObj)
 
 def reset():
     global grille
@@ -308,6 +313,8 @@ FENETRE_LARG = GRILLE_LARG * BLOCK_DIM - 2 * BLOCK_DIM
 PIECE_SPAWN_POS = (GRILLE_LONG // 2 - 1, 1)
 PIECE_PROCHAINE_SPAWN_POS = (GRILLE_LONG + 2, 5)
 STATS_TEXT_DIM = BLOCK_DIM * 0.9
+MILIEU_ECRAN = (FENETRE_LONG // 2, FENETRE_LARG // 2)
+MILIEU_GRILLE = blocks2pixels(GRILLE_LONG // 2, (GRILLE_LARG + 2) // 2)
 
 BLANC = (255, 255, 255)
 GRIS = (175, 175, 175)
@@ -424,10 +431,8 @@ while True:
 
     if Var.GAME_OVER is True:
         pygame.gfxdraw.box(DISPLAYSURF, (0, FENETRE_LARG // 2 - BLOCK_DIM, FENETRE_LONG, BLOCK_DIM * 3), (*ROUGE_FONCE, 200))
-        message('Game Over', BLOCK_DIM + 2, (FENETRE_LONG // 2, FENETRE_LARG // 2))
-        DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
+        message('Game Over', BLOCK_DIM + 2, MILIEU_ECRAN)
         message('(appuyez [r] pour recommencer ou [ESC] pour quitter)', BLOCK_DIM * 0.6, (FENETRE_LONG // 2, FENETRE_LARG // 2 + BLOCK_DIM))
-        DISPLAYSURF.blit(Var.textSurfaceObj, Var.textRectObj)
 
     pygame.display.update()
     FPSCLOCK.tick(Var.FPS)
